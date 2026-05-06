@@ -25,7 +25,7 @@ func NewUserService(userRepo user.InterfaceUserRepository) *UserService {
 func (s *UserService) Register(ctx context.Context, name, email, passwordHash, cpf, phone string, birthDate time.Time, role user.Role) (*user.User, error) {
 
 	// Verifica se o email já existe
-	exists, err := s.userRepo.ExistsByEmail(email)
+	exists, err := s.userRepo.ExistsByEmail(ctx, email)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (s *UserService) Register(ctx context.Context, name, email, passwordHash, c
 
 	// Verifica se o CPF já existe (se informado)
 	if cpf != "" {
-		exists, err = s.userRepo.ExistsByCPF(cpf)
+		exists, err = s.userRepo.ExistsByCPF(ctx, cpf)
 		if err != nil {
 			return nil, err
 		}
@@ -51,7 +51,7 @@ func (s *UserService) Register(ctx context.Context, name, email, passwordHash, c
 	}
 
 	// Persiste no banco
-	if err := s.userRepo.Create(newUser); err != nil {
+	if err := s.userRepo.Create(ctx, newUser); err != nil {
 		return nil, err
 	}
 
@@ -60,7 +60,7 @@ func (s *UserService) Register(ctx context.Context, name, email, passwordHash, c
 
 // GetByID busca um usuário pelo ID
 func (s *UserService) GetByID(ctx context.Context, id uuid.UUID) (*user.User, error) {
-	existingUser, err := s.userRepo.GetByID(id)
+	existingUser, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (s *UserService) GetByID(ctx context.Context, id uuid.UUID) (*user.User, er
 
 // GetByEmail busca usuário pelo email (útil para login)
 func (s *UserService) GetByEmail(ctx context.Context, email string) (*user.User, error) {
-	existingUser, err := s.userRepo.GetByEmail(email)
+	existingUser, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (s *UserService) GetByEmail(ctx context.Context, email string) (*user.User,
 func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, updated user.UserUpdate) (*user.User, error) {
 
 	// Busca o usuário atual
-	existingUser, err := s.userRepo.GetByID(userID)
+	existingUser, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, updat
 	existingUser.Update(updated)
 
 	// Persiste as alterações
-	if err := s.userRepo.Update(existingUser); err != nil {
+	if err := s.userRepo.Update(ctx, existingUser); err != nil {
 		return nil, err
 	}
 
@@ -109,8 +109,16 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, updat
 }
 
 // UpdateReputation atualiza a reputação do usuário (usado após uma review)
-func (s *UserService) UpdateReputation(ctx context.Context, userID uuid.UUID, newRating float32) error {
-	return s.userRepo.UpdateReputation(userID, newRating)
+func (s *UserService) UpdateReputation(ctx context.Context, userID uuid.UUID) error {
+	return s.userRepo.UpdateReputationCache(ctx, userID)
+}
+
+func (s *UserService) UpdateTotalRentalCache(ctx context.Context, userID uuid.UUID) error {
+	return s.userRepo.UpdateTotalRentalCache(ctx, userID)
+}
+
+func (s *UserService) UpdateTotalItemsRentedCache(ctx context.Context, userID uuid.UUID) error {
+	return s.userRepo.UpdateTotalItemsRentedCache(ctx, userID)
 }
 
 // ListUsers (exemplo - útil para admin)

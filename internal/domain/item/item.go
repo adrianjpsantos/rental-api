@@ -4,37 +4,37 @@ import (
 	"os/user"
 	"time"
 
+	"github.com/adrianjpsantos/rental-api/internal/domain/category"
 	"github.com/google/uuid"
 )
 
 type Item struct {
-	Id            uuid.UUID `gorm:"type:uuid;primaryKey"`
-	OwnerID       uuid.UUID `gorm:"type:uuid;not null;index"`
-	CategoryID    uuid.UUID `gorm:"type:uuid;not null;index"`
-	Title         string    `gorm:"not null;size:255"`
-	Description   string    `gorm:"type:text"`
-	Brand         string    `gorm:"size:100"`
-	Model         string    `gorm:"size:100"`
-	Year          int       `gorm:"index"`
-	Condition     string    `gorm:"size:50"`
-	PricePerDay   float64   `gorm:"not null;type:decimal(10,2)"`
-	PricePerHour  float64   `gorm:"type:decimal(10,2)"`
-	MinRentalDays int       `gorm:"default:1"`
-	MaxRentalDays int       `gorm:"default:30"`
-	Quantity      int       `gorm:"not null;default:1"`
-	Location      string    `gorm:"size:255"`
-	Latitude      float64   `gorm:"type:decimal(10,8)"`
-	Longitude     float64   `gorm:"type:decimal(11,8)"`
-	Photos        []string  `gorm:"type:text[]"` // Para PostgreSQL
-	// Photos     string    `gorm:"type:text"`             // Alternativa (JSON)
-	Rules     string `gorm:"type:text"`
-	IsActive  bool   `gorm:"not null;default:true"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	Id            uuid.UUID
+	OwnerID       uuid.UUID
+	CategoryID    uuid.UUID
+	Title         string
+	Description   string
+	Brand         string
+	Model         string
+	Year          int
+	Condition     string
+	PricePerDay   float64
+	PricePerHour  float64
+	MinRentalDays int
+	MaxRentalDays int
+	Quantity      int
+	Location      string
+	Latitude      float64
+	Longitude     float64
+	Photos        []string
+	Rules         string
+	IsActive      bool
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 
 	// Relacionamentos (opcional, mas útil)
-	Owner    user.User         `gorm:"foreignKey:OwnerID"`
-	Category category.Category `gorm:"foreignKey:CategoryID"` // se tiver
+	Owner    user.User
+	Category category.Category // se tiver
 }
 
 type ItemUpdate struct {

@@ -1,10 +1,8 @@
 package user
 
 import (
-	"time"
-
 	"github.com/google/uuid"
-	"gorm.io/gorm"
+	"time"
 )
 
 type Role string
@@ -16,22 +14,22 @@ const (
 )
 
 type User struct {
-	Id               uuid.UUID `gorm:"type:uuid;primaryKey"`
-	Name             string    `gorm:"not null;size:150"`
-	Email            string    `gorm:"unique;not null;size:255"`
-	PasswordHash     string    `gorm:"not null;size:255"`
-	CPF              string    `gorm:"unique;size:14"`
-	Phone            string    `gorm:"size:20"`
+	Id               uuid.UUID
+	Name             string
+	Email            string
+	PasswordHash     string
+	CPF              string
+	Phone            string
 	BirthDate        time.Time
-	AvatarURL        string  `gorm:"size:500"`
-	IsVerified       bool    `gorm:"default:false"`
-	Role             Role    `gorm:"size:20;not null"`
-	Reputation       float32 `gorm:"default:0"`
-	TotalRentals     int     `gorm:"default:0"`
-	TotalItemsRented int     `gorm:"default:0"`
+	AvatarURL        string
+	IsVerified       bool
+	Role             Role
+	Reputation       float32
+	TotalRentals     int
+	TotalItemsRented int
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
-	DeletedAt        gorm.DeletedAt `gorm:"index"` // Soft Delete
+	DeletedAt        time.Time // Soft Delete
 }
 
 type UserUpdate struct {

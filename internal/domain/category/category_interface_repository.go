@@ -1,14 +1,16 @@
 package category
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 )
 
-// ItemRepository define o contrato para acesso aos dados
 type InterfaceCategoryRepository interface {
-	Create(category *Category) error
-	GetByID(id uuid.UUID) (*Category, error)
-	Update(category *Category) error
-	Delete(id uuid.UUID) error
-	Exists(categoryName string) (bool, error)
+	Create(ctx context.Context, category *Category) error
+	GetByID(ctx context.Context, id uuid.UUID) (*Category, error)
+	List(ctx context.Context) ([]*Category, error)
+	Update(ctx context.Context, category *Category) error
+	Delete(ctx context.Context, id uuid.UUID) error
+	Exists(ctx context.Context, name string) (bool, error)
 }

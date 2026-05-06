@@ -4,23 +4,26 @@ import (
 	"context"
 
 	"github.com/adrianjpsantos/rental-api/internal/domain/review"
+	"github.com/adrianjpsantos/rental-api/internal/domain/user"
 	"github.com/google/uuid"
 )
 
 type ReviewService struct {
 	reviewRepo review.InterfaceReviewRepository
+	userRepo   user.InterfaceUserRepository
 }
 
-func NewReviewService(reviewRepo review.InterfaceReviewRepository) *ReviewService {
+func NewReviewService(reviewRepo review.InterfaceReviewRepository, userRepo user.InterfaceUserRepository) *ReviewService {
 	return &ReviewService{
 		reviewRepo: reviewRepo,
+		userRepo:   userRepo,
 	}
 }
 
 func (s *ReviewService) Register(ctx context.Context, rentalID uuid.UUID, reviewerID uuid.UUID, reviewedID uuid.UUID, itemID uuid.UUID, rating int, comment string, reviewType review.ReviewType) (*review.Review, error) {
 
 	// Verifica se o email já existe
-	exists, err := s.reviewRepo.ExistsByRentalAndReviewer(rentalID, reviewerID)
+	exists, err := s.reviewRepo.ExistsByRentalAndReviewer(ctx, rentalID, reviewerID)
 	if err != nil {
 		return nil, err
 	}
@@ -35,15 +38,15 @@ func (s *ReviewService) Register(ctx context.Context, rentalID uuid.UUID, review
 	}
 
 	// Persiste no banco
-	if err := s.reviewRepo.Create(newReview); err != nil {
+	if err := s.reviewRepo.Create(ctx, newReview); err != nil {
 		return nil, err
 	}
 
-	return newReview, nil
+	return newReview, s.userRepo.UpdateReputationCache(ctx, reviewedID)
 }
 
 func (s *ReviewService) GetByID(ctx context.Context, id uuid.UUID) (*review.Review, error) {
-	existingReview, err := s.reviewRepo.GetByID(id)
+	existingReview, err := s.reviewRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +57,7 @@ func (s *ReviewService) GetByID(ctx context.Context, id uuid.UUID) (*review.Revi
 }
 
 func (s *ReviewService) GetByRentalID(ctx context.Context, rentalID uuid.UUID) ([]*review.Review, error) {
-	listReview, err := s.reviewRepo.GetByRentalID(rentalID)
+	listReview, err := s.reviewRepo.GetByRentalID(ctx, rentalID)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +66,7 @@ func (s *ReviewService) GetByRentalID(ctx context.Context, rentalID uuid.UUID) (
 }
 
 func (s *ReviewService) GetByReviewedID(ctx context.Context, reviewedID uuid.UUID, reviewType *review.ReviewType) ([]*review.Review, error) {
-	listReview, err := s.reviewRepo.GetByReviewedID(reviewedID, reviewType)
+	listReview, err := s.reviewRepo.GetByReviewedID(ctx, reviewedID, reviewType)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +75,7 @@ func (s *ReviewService) GetByReviewedID(ctx context.Context, reviewedID uuid.UUI
 }
 
 func (s *ReviewService) ListUserReviews(ctx context.Context, userID uuid.UUID) ([]*review.Review, error) {
-	listReview, err := s.reviewRepo.ListUserReviews(userID)
+	listReview, err := s.reviewRepo.ListUserReviews(ctx, userID)
 
 	if err != nil {
 		return nil, err

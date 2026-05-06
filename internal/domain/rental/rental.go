@@ -35,18 +35,18 @@ const (
 )
 
 type Rental struct {
-	Id                 uuid.UUID      `gorm:"type:uuid;primaryKey"`
-	ItemID             uuid.UUID      `gorm:"type:uuid;not null;index"`
-	LesseeID           uuid.UUID      `gorm:"type:uuid;not null;index"`
-	LessorID           uuid.UUID      `gorm:"type:uuid;not null;index"`
-	StartDate          time.Time      `gorm:"not null"`
-	EndDate            time.Time      `gorm:"not null"`
-	TotalAmount        float64        `gorm:"not null;type:decimal(12,2)"`
-	Status             Status         `gorm:"size:30;not null;index"`
-	PaymentStatus      PaymentStatus  `gorm:"size:30;not null"`
-	DeliveryMethod     DeliveryMethod `gorm:"size:50"`
-	Notes              string         `gorm:"type:text"`
-	CancellationReason string         `gorm:"type:text"`
+	Id                 uuid.UUID
+	ItemID             uuid.UUID
+	LesseeID           uuid.UUID
+	LessorID           uuid.UUID
+	StartDate          time.Time
+	EndDate            time.Time
+	TotalAmount        float64
+	Status             Status
+	PaymentStatus      PaymentStatus
+	DeliveryMethod     DeliveryMethod
+	Notes              string
+	CancellationReason string
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
 	StartedAt          *time.Time

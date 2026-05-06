@@ -1,32 +1,42 @@
 package database
 
 import (
+	"database/sql"
 	"fmt"
-	"log"
 
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/config"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	_ "github.com/lib/pq"
 )
 
-func NewConnectionPostgreSql(cfg *config.Config) (*gorm.DB, error) {
-	dsn := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
-		cfg.Database.Host,
+func NewConnectionPostgres(cfg *config.Config) (*sql.DB, error) {
+
+	connStr := fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		cfg.Database.User,
 		cfg.Database.Password,
-		cfg.Database.DBName,
+		cfg.Database.Host,
 		cfg.Database.Port,
-		cfg.Database.SSLMode,
+		cfg.Database.DBName,
 	)
-
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		PrepareStmt: true, // melhora performance
-	})
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		return nil, fmt.Errorf("falha ao conectar ao banco: %w", err)
+		return nil, err
 	}
 
-	log.Println("✅ Conectado ao PostgreSQL com sucesso!")
+	// testa conexão de verdade
+	if err := db.Ping(); err != nil {
+		return nil, err
+	}
+
+	fmt.Println("Connected to PostgreSQL successfully.")
+
+	var version string
+	err = db.QueryRow("SELECT version()").Scan(&version)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("Postgres version:", version)
+
 	return db, nil
 }

@@ -35,7 +35,7 @@ func LoadConfig() *Config {
 	cfg.Database.Host = getEnv("DB_HOST", "localhost")
 	cfg.Database.Port = getEnv("DB_PORT", "5432")
 	cfg.Database.User = getEnv("DB_USER", "postgres")
-	cfg.Database.Password = getEnv("DB_PASSWORD", "senha123")
+	cfg.Database.Password = getEnv("DB_PASSWORD", "123456")
 	cfg.Database.DBName = getEnv("DB_NAME", "rental_db")
 	cfg.Database.SSLMode = getEnv("DB_SSLMODE", "disable")
 

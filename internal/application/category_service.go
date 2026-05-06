@@ -2,77 +2,88 @@ package application
 
 import (
 	"context"
-	"time"
 
 	"github.com/adrianjpsantos/rental-api/internal/domain/category"
 	"github.com/google/uuid"
 )
 
 type CategoryService struct {
-	categorySlotRepo category.InterfaceCategoryRepository
+	categoryRepo category.InterfaceCategoryRepository
 }
 
-func NewCategoryService(categorySlotRepo category.InterfaceCategoryRepository) *CategoryService {
+func NewCategoryService(categoryRepo category.InterfaceCategoryRepository) *CategoryService {
 	return &CategoryService{
-		categorySlotRepo: categorySlotRepo,
+		categoryRepo: categoryRepo,
 	}
 }
 
-func (s *CategoryService) Register(ctx context.Context, itemID uuid.UUID, startDate, endDate time.Time, slotType category.CategoryType, reason category.Reason) (*category.CategorySlot, error) {
+func (s *CategoryService) Register(ctx context.Context, name, description, icon string, position int, isActive bool) (*category.Category, error) {
 
-	exists, err := s.categorySlotRepo.Exists(name)
+	exists, err := s.categoryRepo.Exists(ctx, name)
 	if err != nil {
 		return nil, err
 	}
 	if exists {
-		return nil, category.ErrSlotAlreadyExists
+		return nil, category.ErrNameAlreadyExists
 	}
 
 	// Cria a entidade usando o construtor do domínio
-	newSlot, err := category.NewCategorySlot(itemID, startDate, endDate, slotType, reason)
+	NewCategory, err := category.NewCategory(name, description, icon, position)
 	if err != nil {
 		return nil, err
 	}
 
 	// Persiste no banco
-	if err := s.categorySlotRepo.Create(newSlot); err != nil {
+	if err := s.categoryRepo.Create(ctx, NewCategory); err != nil {
 		return nil, err
 	}
 
-	return newSlot, nil
+	return NewCategory, nil
 }
 
-func (s *CategoryService) GetByID(ctx context.Context, slotID uuid.UUID) (*category.CategorySlot, error) {
-	existingCategory, err := s.categorySlotRepo.GetByID(slotID)
+func (s *CategoryService) GetByID(ctx context.Context, categoryID uuid.UUID) (*category.Category, error) {
+	existingCategory, err := s.categoryRepo.GetByID(ctx, categoryID)
 	if err != nil {
 		return nil, err
 	}
 	if existingCategory == nil {
-		return nil, category.ErrSlotNotFound
+		return nil, category.ErrCategoryNotFound
 	}
 	return existingCategory, nil
 }
 
-func (s *CategoryService) FindByItemID(ctx context.Context, itemID uuid.UUID) ([]*category.CategorySlot, error) {
-	listCategory, err := s.categorySlotRepo.FindByItemID(itemID)
+func (s *CategoryService) Update(ctx context.Context, categoryID uuid.UUID, updated category.CategoryUpdate) (*category.Category, error) {
+
+	existingCategory, err := s.categoryRepo.GetByID(ctx, categoryID)
 	if err != nil {
 		return nil, err
 	}
+	if existingCategory == nil {
+		return nil, category.ErrCategoryNotFound
+	}
 
-	return listCategory, nil
+	existingCategory.Update(updated)
+
+	// Persiste as alterações
+	if err := s.categoryRepo.Update(ctx, existingCategory); err != nil {
+		return nil, err
+	}
+
+	return existingCategory, nil
 }
 
-func (s *CategoryService) FindOverlapping(ctx context.Context, itemID uuid.UUID, startDate, endDate time.Time) ([]*category.CategorySlot, error) {
-	listCategory, err := s.categorySlotRepo.FindOverlapping(itemID, startDate, endDate)
+func (s *CategoryService) ListCategories(ctx context.Context) ([]*category.Category, error) {
+
+	list, err := s.categoryRepo.List(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return listCategory, nil
+	return list, nil
 }
 
 func (s *CategoryService) Delete(ctx context.Context, slotID uuid.UUID) error {
-	err := s.categorySlotRepo.Delete(slotID)
+	err := s.categoryRepo.Delete(ctx, slotID)
 
 	if err != nil {
 		return err

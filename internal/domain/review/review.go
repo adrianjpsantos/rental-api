@@ -14,18 +14,18 @@ const (
 )
 
 type Review struct {
-	Id         uuid.UUID  `gorm:"type:uuid;primaryKey"`
-	RentalID   uuid.UUID  `gorm:"type:uuid;not null;index"`
-	ReviewerID uuid.UUID  `gorm:"type:uuid;not null"`
-	ReviewedID uuid.UUID  `gorm:"type:uuid;not null"`
-	ItemID     uuid.UUID  `gorm:"type:uuid;not null"`
-	Rating     int        `gorm:"not null;check:rating BETWEEN 1 AND 5"`
-	Comment    string     `gorm:"type:text"`
-	ReviewType ReviewType `gorm:"size:20;not null"`
+	Id         uuid.UUID
+	RentalID   uuid.UUID
+	ReviewerID uuid.UUID
+	ReviewedID uuid.UUID
+	ItemID     uuid.UUID
+	Rating     int
+	Comment    string
+	ReviewType ReviewType
 	CreatedAt  time.Time
 
 	// Índice único para evitar múltiplas avaliações do mesmo rental
-	UniqueRentalReview string `gorm:"-"` // apenas referência
+	UniqueRentalReview string // apenas referência
 }
 
 func NewReview(

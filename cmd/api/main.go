@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/config"
+	"github.com/adrianjpsantos/rental-api/internal/infrastructure/database"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/routes"
 )
 
@@ -14,10 +15,10 @@ func main() {
 
 	// Conecta com o banco
 	fmt.Println("🚀 Conectando Aos Bancos de Dados...")
-	/*postgresDB, err := database.NewConnectionPostgreSql(cfg)
+	_, err := database.NewConnectionPostgres(cfg)
 	if err != nil {
 		log.Fatalf("Erro ao conectar no banco: %v", err)
-	}*/
+	}
 
 	fmt.Println("🚀 Iniciando Rental API...")
 	port := cfg.Server.Port

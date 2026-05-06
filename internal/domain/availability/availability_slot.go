@@ -23,19 +23,19 @@ const (
 )
 
 type AvailabilitySlot struct {
-	Id        uuid.UUID        `gorm:"type:uuid;primaryKey"`
-	ItemId    uuid.UUID        `gorm:"type:uuid;not null;index"`
-	StartDate time.Time        `gorm:"not null;index"`
-	EndDate   time.Time        `gorm:"not null;index"`
-	Type      AvailabilityType `gorm:"size:50;not null"`
-	Reason    Reason           `gorm:"size:100"`
+	Id        uuid.UUID
+	ItemId    uuid.UUID
+	StartDate time.Time
+	EndDate   time.Time
+	Type      AvailabilityType
+	Reason    Reason
 	CreatedAt time.Time
 
 	// Índice composto (útil para consultas de disponibilidade)
-	ItemIdStartEndIdx string `gorm:"-"` // ignorado
+	ItemIdStartEndIdx string // ignorado
 
 	// Relacionamento
-	Item item.Item `gorm:"foreignKey:ItemId"`
+	Item item.Item
 }
 
 func NewAvailabilitySlot(

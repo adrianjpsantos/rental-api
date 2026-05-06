@@ -1,15 +1,19 @@
 package item
 
-import "github.com/google/uuid"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 // ItemRepository define o contrato para acesso aos dados
 type InterfaceItemRepository interface {
-	Create(item *Item) error
-	GetByID(id uuid.UUID) (*Item, error)
-	ListByFilters(filters ItemFilter) ([]*Item, error)
-	Update(item *Item) error
-	Delete(id uuid.UUID) error
-	Exists(id uuid.UUID) (bool, error)
+	Create(ctx context.Context, item *Item) error
+	GetByID(ctx context.Context, id uuid.UUID) (*Item, error)
+	ListByFilters(ctx context.Context, filters ItemFilter) ([]*Item, error)
+	Update(ctx context.Context, item *Item) error
+	Delete(ctx context.Context, id uuid.UUID) error
+	Exists(ctx context.Context, id uuid.UUID) (bool, error)
 }
 
 // ItemFilter é usado para filtros na listagem
