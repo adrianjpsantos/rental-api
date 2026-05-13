@@ -15,7 +15,7 @@ func main() {
 
 	// Conecta com o banco
 	fmt.Println("🚀 Conectando Aos Bancos de Dados...")
-	_, err := database.NewConnectionPostgres(cfg)
+	db, err := database.NewConnectionPostgres(cfg)
 	if err != nil {
 		log.Fatalf("Erro ao conectar no banco: %v", err)
 	}
@@ -23,7 +23,7 @@ func main() {
 	fmt.Println("🚀 Iniciando Rental API...")
 	port := cfg.Server.Port
 	// Aqui vamos configurar o router depois
-	router := routes.SetupRouter()
+	router := routes.SetupRouter(db)
 
 	log.Printf("✅ API rodando na porta %s", port)
 

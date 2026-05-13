@@ -108,6 +108,14 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, updat
 	return existingUser, nil
 }
 
+func (s *UserService) ExistsByEmail(ctx context.Context, email string) (bool, error) {
+	return s.userRepo.ExistsByEmail(ctx, email)
+}
+
+func (s *UserService) ExistsByCPF(ctx context.Context, cpf string) (bool, error) {
+	return s.userRepo.ExistsByCPF(ctx, cpf)
+}
+
 // UpdateReputation atualiza a reputação do usuário (usado após uma review)
 func (s *UserService) UpdateReputation(ctx context.Context, userID uuid.UUID) error {
 	return s.userRepo.UpdateReputationCache(ctx, userID)
