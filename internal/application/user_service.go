@@ -134,3 +134,7 @@ func (s *UserService) ListUsers(ctx context.Context) ([]*user.User, error) {
 	// Aqui você pode adicionar filtros depois
 	return nil, errors.New("não implementado ainda")
 }
+
+func (s *UserService) Delete(ctx context.Context, userID uuid.UUID) error {
+	return s.userRepo.Delete(ctx, userID)
+}

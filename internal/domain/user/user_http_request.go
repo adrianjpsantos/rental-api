@@ -8,6 +8,10 @@ type ReqByCPF struct {
 	Cpf string `json:"cpf"`
 }
 
-type ReqById struct {
-	Id string `json:"id"`
+type ReqUpdate struct {
+	Id       string     `json:"id"`
+	ToUpdate UserUpdate `json:"to_update"`
+}
+type ReqCreate struct {
+	NewUser User `json:"new_user"`
 }

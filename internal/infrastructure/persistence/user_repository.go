@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/adrianjpsantos/rental-api/internal/domain/user"
 	"github.com/google/uuid"
@@ -67,7 +68,22 @@ func (r *UserRepository) Create(ctx context.Context, u *user.User) error {
 
 // Delete implements [user.InterfaceUserRepository].
 func (r *UserRepository) Delete(ctx context.Context, userID uuid.UUID) error {
-	panic("unimplemented")
+	query := `
+	UPDATE users 
+	(deleted_at=$2) 
+	WHERE Id = $1
+	`
+	_, err := r.db.ExecContext(ctx, query,
+		userID,
+		time.Now(),
+	)
+
+	if err != nil {
+		fmt.Printf("DELETE USER ERR: %s", err.Error())
+		return err
+	}
+
+	return nil
 }
 
 // ExistsByCPF implements [user.InterfaceUserRepository].

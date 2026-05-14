@@ -16,12 +16,7 @@ func SetupRouter(db *sql.DB) *fiber.App {
 	userService := application.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userService)
 	api := app.Group("/api")
-	api.Get("/health", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"status":  "ok",
-			"message": "API funcionando",
-		})
-	})
+	api.Get("/health", handlers.GetHealth)
 
 	SetupUserRoutes(api, userHandler)
 
@@ -29,6 +24,16 @@ func SetupRouter(db *sql.DB) *fiber.App {
 }
 
 func SetupUserRoutes(fiber fiber.Router, handler *handlers.UserHandler) {
+	//Basic CRUD
+	fiber.Post("/users", handler.Create)
+	fiber.Get("/users/:id", handler.GetByID)
+	fiber.Put("/users/:id", handler.Update)
+	fiber.Delete("/users/:id", handler.Delete)
 
-	fiber.Post("/users/exists-by-email", handler.ExistsByEmail) // ou Get, dependendo do caso
+	//Buscas
+	fiber.Post("/users/by-email", handler.GetByEmail)
+
+	//Exists
+	fiber.Post("/users/exists-by-email", handler.ExistsByEmail)
+	fiber.Post("/users/exists-by-cpf", handler.ExistsByCPF)
 }

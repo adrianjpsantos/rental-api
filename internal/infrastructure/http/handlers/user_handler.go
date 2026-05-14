@@ -22,9 +22,8 @@ func NewUserHandler(service *application.UserService) *UserHandler {
 }
 
 // CRUD Básico
-func (h *UserHandler) Create(c fiber.Ctx) error { return nil }
-func (h *UserHandler) GetByID(c fiber.Ctx) error {
-	var req user.ReqById
+func (h *UserHandler) Create(c fiber.Ctx) error {
+	var req user.ReqCreate
 
 	if err := c.Bind().Body(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Response{
@@ -33,7 +32,36 @@ func (h *UserHandler) GetByID(c fiber.Ctx) error {
 		})
 	}
 
-	existingUser, err := h.service.GetByID(c.Context(), uuid.MustParse(req.Id))
+	newUser := req.NewUser
+	newUser.GenerateHashedPassword()
+
+	createdUser, err := h.service.Register(c.Context(), newUser.Name, newUser.Email, newUser.PasswordHash, newUser.CPF, newUser.Phone, newUser.BirthDate, newUser.Role)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(Response{
+			Success: false,
+			Error:   err.Error(),
+		})
+	}
+
+	return c.JSON(Response{
+		Success: true,
+		Data: fiber.Map{
+			"created-user-id": createdUser.Id,
+		},
+	})
+
+}
+func (h *UserHandler) GetByID(c fiber.Ctx) error {
+	reqId := c.Params("id")
+	if _, err := uuid.Parse(reqId); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Response{
+			Success: false,
+			Error:   "ID Inválido",
+		})
+	}
+
+	existingUser, err := h.service.GetByID(c.Context(), uuid.MustParse(reqId))
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(Response{
@@ -49,8 +77,59 @@ func (h *UserHandler) GetByID(c fiber.Ctx) error {
 		},
 	})
 }
-func (h *UserHandler) Update(c fiber.Ctx) error { return nil }
-func (h *UserHandler) Delete(c fiber.Ctx) error { return nil }
+func (h *UserHandler) Update(c fiber.Ctx) error {
+	var req user.ReqUpdate
+
+	if err := c.Bind().Body(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Response{
+			Success: false,
+			Error:   "JSON Inválido",
+		})
+	}
+
+	updatedUser, err := h.service.UpdateProfile(c.Context(), uuid.MustParse(req.Id), req.ToUpdate)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(Response{
+			Success: false,
+			Error:   err.Error(),
+		})
+	}
+
+	return c.JSON(Response{
+		Success: true,
+		Data: fiber.Map{
+			"updated_user": updatedUser,
+		},
+	})
+
+}
+func (h *UserHandler) Delete(c fiber.Ctx) error {
+
+	reqId := c.Params("id")
+	if _, err := uuid.Parse(reqId); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Response{
+			Success: false,
+			Error:   "ID Inválido",
+		})
+	}
+
+	err := h.service.Delete(c.Context(), uuid.MustParse(reqId))
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(Response{
+			Success: false,
+			Error:   err.Error(),
+		})
+	}
+
+	return c.JSON(Response{
+		Success: true,
+		Data: fiber.Map{
+			"deleted_id": reqId,
+		},
+	})
+}
 
 // Buscas
 func (h *UserHandler) GetByEmail(c fiber.Ctx) error {
@@ -134,8 +213,3 @@ func (h *UserHandler) ExistsByCPF(c fiber.Ctx) error {
 		},
 	})
 }
-
-// Cache
-func (h *UserHandler) UpdateReputationCache(c fiber.Ctx) error       { return nil }
-func (h *UserHandler) UpdateTotalRentalCache(c fiber.Ctx) error      { return nil }
-func (h *UserHandler) UpdateTotalItemsRentedCache(c fiber.Ctx) error { return nil }
