@@ -28,3 +28,13 @@ func (r *Review) Validate() error {
 
 	return nil
 }
+
+func ParseReviewType(value string) (*ReviewType, error) {
+	switch ReviewType(value) {
+	case AsLessor, AsLessee:
+		rt := ReviewType(value)
+		return &rt, nil
+	default:
+		return nil, ErrInvalidReviewType
+	}
+}

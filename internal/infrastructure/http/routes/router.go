@@ -23,17 +23,30 @@ func SetupRouter(db *sql.DB) *fiber.App {
 	return app
 }
 
-func SetupUserRoutes(fiber fiber.Router, handler *handlers.UserHandler) {
+func SetupUserRoutes(router fiber.Router, handler *handlers.UserHandler) {
 	//Basic CRUD
-	fiber.Post("/users", handler.Create)
-	fiber.Get("/users/:id", handler.GetByID)
-	fiber.Put("/users/:id", handler.Update)
-	fiber.Delete("/users/:id", handler.Delete)
+	router.Post("/users", handler.Create)
+	router.Get("/users/:id", handler.GetByID)
+	router.Put("/users/:id", handler.Update)
+	router.Delete("/users/:id", handler.Delete)
 
 	//Buscas
-	fiber.Post("/users/by-email", handler.GetByEmail)
+	router.Post("/users/by-email", handler.GetByEmail)
 
 	//Exists
-	fiber.Post("/users/exists-by-email", handler.ExistsByEmail)
-	fiber.Post("/users/exists-by-cpf", handler.ExistsByCPF)
+	router.Post("/users/exists-by-email", handler.ExistsByEmail)
+	router.Post("/users/exists-by-cpf", handler.ExistsByCPF)
+}
+
+func SetupReviewRoutes(router fiber.Router, handler *handlers.ReviewHandler) {
+	router.Post("/reviews", handler.Create)
+	router.Get("/reviews/:id", handler.GetByID)
+
+	//Other Reads
+	router.Get("/rentals/:rental_id/reviews", handler.GetByRentalID)
+
+	router.Get("/users/:user_id/reviews/received", handler.GetReceivedReviews)
+	router.Get("/users/:user_id/reviews/given", handler.GetGivenReviews)
+
+	router.Get("/users/:user_id/reviews", handler.GetUserReviews)
 }

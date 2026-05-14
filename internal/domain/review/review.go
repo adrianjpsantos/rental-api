@@ -15,17 +15,17 @@ const (
 
 type Review struct {
 	Id         uuid.UUID
-	RentalID   uuid.UUID
-	ReviewerID uuid.UUID
-	ReviewedID uuid.UUID
-	ItemID     uuid.UUID
-	Rating     int
-	Comment    string
-	ReviewType ReviewType
-	CreatedAt  time.Time
+	RentalID   uuid.UUID  `json:"rental_id"`
+	ReviewerID uuid.UUID  `json:"reviewer_id"`
+	ReviewedID uuid.UUID  `json:"reviewed_id"`
+	ItemID     uuid.UUID  `json:"item_id"`
+	Rating     int        `json:"rating"`
+	Comment    string     `json:"comment"`
+	ReviewType ReviewType `json:"review_type"`
+	CreatedAt  time.Time  `json:"created_at"`
 
 	// Índice único para evitar múltiplas avaliações do mesmo rental
-	UniqueRentalReview string // apenas referência
+	UniqueRentalReview string `json:"unique_rental_review"` // apenas referência
 }
 
 func NewReview(

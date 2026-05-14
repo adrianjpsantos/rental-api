@@ -114,7 +114,7 @@ func (r *ReviewRepository) GetByRentalID(ctx context.Context, rentalID uuid.UUID
 	return list, nil
 }
 
-func (r *ReviewRepository) GetByReviewedID(ctx context.Context, reviewedID uuid.UUID, reviewType *review.ReviewType) ([]*review.Review, error) {
+func (r *ReviewRepository) GetReceivedReviews(ctx context.Context, reviewedID uuid.UUID, reviewType *review.ReviewType) ([]*review.Review, error) {
 	query := `
 		SELECT id, rental_id, reviewer_id, reviewed_id,
 		       item_id, rating, comment, review_type, created_at
@@ -164,6 +164,59 @@ func (r *ReviewRepository) GetByReviewedID(ctx context.Context, reviewedID uuid.
 
 	return list, nil
 }
+
+func (r *ReviewRepository) GetGivenReviews(ctx context.Context, reviewerID uuid.UUID, reviewType *review.ReviewType) ([]*review.Review, error) {
+	query := `
+		SELECT id, rental_id, reviewer_id, reviewer_id,
+		       item_id, rating, comment, review_type, created_at
+		FROM reviews
+		WHERE reviewer_id = $1
+	`
+
+	args := []interface{}{reviewerID}
+
+	if reviewType != nil {
+		query += " AND review_type = $2"
+		args = append(args, *reviewType)
+	}
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []*review.Review
+
+	for rows.Next() {
+		var rv review.Review
+
+		err := rows.Scan(
+			&rv.Id,
+			&rv.RentalID,
+			&rv.ReviewerID,
+			&rv.ReviewedID,
+			&rv.ItemID,
+			&rv.Rating,
+			&rv.Comment,
+			&rv.ReviewType,
+			&rv.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, &rv)
+	}
+
+	if len(list) == 0 {
+		return nil, review.ErrReviewNotFound
+	}
+
+	return list, nil
+}
+
+// INTERNO: Verificar se o usuário já avaliou o aluguel para evitar avaliações duplicadas
 func (r *ReviewRepository) ExistsByRentalAndReviewer(ctx context.Context, rentalID, reviewerID uuid.UUID) (bool, error) {
 	query := `
 		SELECT EXISTS (
@@ -181,15 +234,23 @@ func (r *ReviewRepository) ExistsByRentalAndReviewer(ctx context.Context, rental
 
 	return exists, nil
 }
-func (r *ReviewRepository) ListUserReviews(ctx context.Context, userID uuid.UUID) ([]*review.Review, error) {
+
+func (r *ReviewRepository) GetUserReviews(ctx context.Context, userID uuid.UUID, reviewType *review.ReviewType) ([]*review.Review, error) {
 	query := `
 		SELECT id, rental_id, reviewer_id, reviewed_id,
 		       item_id, rating, comment, review_type, created_at
 		FROM reviews
-		WHERE reviewer_id = $1
+		WHERE (reviewer_id = $1 OR reviewed_id = $1)
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, userID)
+	args := []interface{}{userID}
+
+	if reviewType != nil {
+		query += " AND review_type = $2"
+		args = append(args, *reviewType)
+	}
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

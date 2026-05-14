@@ -57,29 +57,17 @@ func (s *ReviewService) GetByID(ctx context.Context, id uuid.UUID) (*review.Revi
 }
 
 func (s *ReviewService) GetByRentalID(ctx context.Context, rentalID uuid.UUID) ([]*review.Review, error) {
-	listReview, err := s.reviewRepo.GetByRentalID(ctx, rentalID)
-	if err != nil {
-		return nil, err
-	}
-
-	return listReview, nil
+	return s.reviewRepo.GetByRentalID(ctx, rentalID)
 }
 
-func (s *ReviewService) GetByReviewedID(ctx context.Context, reviewedID uuid.UUID, reviewType *review.ReviewType) ([]*review.Review, error) {
-	listReview, err := s.reviewRepo.GetByReviewedID(ctx, reviewedID, reviewType)
-	if err != nil {
-		return nil, err
-	}
-
-	return listReview, nil
+func (s *ReviewService) GetReceivedReviews(ctx context.Context, reviewedID uuid.UUID, reviewType *review.ReviewType) ([]*review.Review, error) {
+	return s.reviewRepo.GetReceivedReviews(ctx, reviewedID, reviewType)
 }
 
-func (s *ReviewService) ListUserReviews(ctx context.Context, userID uuid.UUID) ([]*review.Review, error) {
-	listReview, err := s.reviewRepo.ListUserReviews(ctx, userID)
+func (s *ReviewService) GetGivenReviews(ctx context.Context, reviewedID uuid.UUID, reviewType *review.ReviewType) ([]*review.Review, error) {
+	return s.reviewRepo.GetGivenReviews(ctx, reviewedID, reviewType)
+}
 
-	if err != nil {
-		return nil, err
-	}
-
-	return listReview, nil
+func (s *ReviewService) GetUserReviews(ctx context.Context, userID uuid.UUID, reviewType *review.ReviewType) ([]*review.Review, error) {
+	return s.reviewRepo.GetUserReviews(ctx, userID, reviewType)
 }

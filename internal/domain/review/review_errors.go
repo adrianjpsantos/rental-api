@@ -9,7 +9,7 @@ var (
 	ErrInvalidReviewedID = errors.New("reviewed_id é obrigatório")
 	ErrInvalidItemID     = errors.New("item_id é obrigatório")
 	ErrInvalidRating     = errors.New("a avaliação deve ser entre 1 e 5 estrelas")
-	ErrInvalidReviewType = errors.New("tipo de avaliação inválido")
+	ErrInvalidReviewType = errors.New("Tipo de avaliação inválido, aceito apenas 'as_lessor' ou 'as_lessee'")
 
 	// Erros de negócio
 	ErrReviewAlreadyExists      = errors.New("você já avaliou este aluguel")
