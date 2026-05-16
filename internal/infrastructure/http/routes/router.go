@@ -5,6 +5,7 @@ import (
 
 	_ "github.com/adrianjpsantos/rental-api/docs"
 	"github.com/adrianjpsantos/rental-api/internal/application"
+	"github.com/adrianjpsantos/rental-api/internal/domain/item"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/handlers"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/persistence"
 	swaggo "github.com/gofiber/contrib/v3/swaggo"
@@ -14,14 +15,21 @@ import (
 func SetupRouter(db *sql.DB) *fiber.App {
 	app := fiber.New()
 
-	userRepo := persistence.NewUserRepository(db)
-	userService := application.NewUserService(userRepo)
-	userHandler := handlers.NewUserHandler(userService)
+	//Repositories, Services e Handlers
+	repositories := persistence.NewAllRepositories(db)
+	services := application.NewAllServices(repositories)
+	apiHandlers := handlers.NewAllHandlers(services)
+
 	api := app.Group("/api")
 	api.Get("/health", handlers.GetHealth)
 
 	SetupSwagger(app)
-	SetupUserRoutes(api, userHandler)
+	SetupUserRoutes(api, apiHandlers.UserHandler)
+	SetupReviewRoutes(api, apiHandlers.ReviewHandler)
+	SetupRentalRoutes(api, apiHandlers.RentalHandler)
+	SetupItemRoutes(api, apiHandlers.ItemHandler)
+	//SetupAvailabilityRoutes(api, apiHandlers.AvailabilityHandler)
+	//SetupCategoryRoutes(api, apiHandlers.CategoryHandler)
 
 	return app
 }
@@ -76,4 +84,14 @@ func SetupRentalRoutes(router fiber.Router, handler *handlers.RentalHandler) {
 	router.Get("/users/:user_id/rentals", handler.GetAllUserRentals)
 	router.Get("/users/:user_id/rentals/lessee", handler.GetUserRentalsAsLessee)
 	router.Get("/users/:user_id/rentals/lessor", handler.GetUserRentalsAsLessor)
+}
+
+func SetupItemRoutes(router fiber.Router, handler item.InterfaceItemHandler) {
+	router.Post("/items", handler.CreateItem)
+	router.Get("/items/:item_id", handler.GetItemByID)
+	router.Put("/items/:item_id", handler.UpdateItem)
+	router.Delete("/items/:item_id", handler.DeleteItem)
+
+	//Other Reads
+	router.Post("/items/search", handler.ListItems)
 }
