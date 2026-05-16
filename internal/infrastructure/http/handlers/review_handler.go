@@ -3,8 +3,8 @@ package handlers
 import (
 	"github.com/adrianjpsantos/rental-api/internal/application"
 	"github.com/adrianjpsantos/rental-api/internal/domain/review"
+	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/handler_helpers"
 	"github.com/gofiber/fiber/v3"
-	"github.com/google/uuid"
 )
 
 type ReviewHandler struct {
@@ -47,15 +47,15 @@ func (h *ReviewHandler) Create(c fiber.Ctx) error {
 
 // CRUD - READ
 func (h *ReviewHandler) GetByID(c fiber.Ctx) error {
-	reqId := c.Params("id")
-	if _, err := uuid.Parse(reqId); err != nil {
+	reqId, err := handler_helpers.ParseUUIDParam(c, "review_id")
+	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Response{
 			Success: false,
 			Error:   "ID Inválido",
 		})
 	}
 
-	existingReview, err := h.service.GetByID(c.Context(), uuid.MustParse(reqId))
+	existingReview, err := h.service.GetByID(c.Context(), reqId)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(Response{
@@ -74,15 +74,15 @@ func (h *ReviewHandler) GetByID(c fiber.Ctx) error {
 
 // CRUD - READ - get by rental id
 func (h *ReviewHandler) GetByRentalID(c fiber.Ctx) error {
-	reqId := c.Params("rental_id")
-	if _, err := uuid.Parse(reqId); err != nil {
+	reqId, err := handler_helpers.ParseUUIDParam(c, "rental_id")
+	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Response{
 			Success: false,
 			Error:   "ID Inválido",
 		})
 	}
 
-	existingReview, err := h.service.GetByRentalID(c.Context(), uuid.MustParse(reqId))
+	existingReview, err := h.service.GetByRentalID(c.Context(), reqId)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(Response{
@@ -101,28 +101,23 @@ func (h *ReviewHandler) GetByRentalID(c fiber.Ctx) error {
 
 // CRUD - READ - get by reviewed id ( user )
 func (h *ReviewHandler) GetReceivedReviews(c fiber.Ctx) error {
-	reqId := c.Params("user_id")
-	if _, err := uuid.Parse(reqId); err != nil {
+	reqId, err := handler_helpers.ParseUUIDParam(c, "user_id")
+	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Response{
 			Success: false,
 			Error:   "ID Inválido",
 		})
 	}
 
-	var reviewType *review.ReviewType
-	if q := c.Query("type"); q != "" {
-		rt, err := review.ParseReviewType(q)
-		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(Response{
-				Success: false,
-				Error:   err.Error(),
-			})
-		}
-
-		reviewType = rt
+	reviewType, err := handler_helpers.ParseReviewTypeQuery(c)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Response{
+			Success: false,
+			Error:   err.Error(),
+		})
 	}
 
-	existingReviews, err := h.service.GetReceivedReviews(c.Context(), uuid.MustParse(reqId), reviewType)
+	existingReviews, err := h.service.GetReceivedReviews(c.Context(), reqId, reviewType)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(Response{
@@ -140,28 +135,23 @@ func (h *ReviewHandler) GetReceivedReviews(c fiber.Ctx) error {
 }
 
 func (h *ReviewHandler) GetGivenReviews(c fiber.Ctx) error {
-	reqId := c.Params("user_id")
-	if _, err := uuid.Parse(reqId); err != nil {
+	reqId, err := handler_helpers.ParseUUIDParam(c, "user_id")
+	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Response{
 			Success: false,
 			Error:   "ID Inválido",
 		})
 	}
 
-	var reviewType *review.ReviewType
-	if q := c.Query("type"); q != "" {
-		rt, err := review.ParseReviewType(q)
-		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(Response{
-				Success: false,
-				Error:   err.Error(),
-			})
-		}
-
-		reviewType = rt
+	reviewType, err := handler_helpers.ParseReviewTypeQuery(c)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Response{
+			Success: false,
+			Error:   err.Error(),
+		})
 	}
 
-	existingReviews, err := h.service.GetGivenReviews(c.Context(), uuid.MustParse(reqId), reviewType)
+	existingReviews, err := h.service.GetGivenReviews(c.Context(), reqId, reviewType)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(Response{
@@ -179,28 +169,23 @@ func (h *ReviewHandler) GetGivenReviews(c fiber.Ctx) error {
 }
 
 func (h *ReviewHandler) GetUserReviews(c fiber.Ctx) error {
-	reqId := c.Params("user_id")
-	if _, err := uuid.Parse(reqId); err != nil {
+	reqId, err := handler_helpers.ParseUUIDParam(c, "user_id")
+	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Response{
 			Success: false,
 			Error:   "ID Inválido",
 		})
 	}
 
-	var reviewType *review.ReviewType
-	if q := c.Query("type"); q != "" {
-		rt, err := review.ParseReviewType(q)
-		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(Response{
-				Success: false,
-				Error:   err.Error(),
-			})
-		}
-
-		reviewType = rt
+	reviewType, err := handler_helpers.ParseReviewTypeQuery(c)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Response{
+			Success: false,
+			Error:   err.Error(),
+		})
 	}
 
-	existingReviews, err := h.service.GetUserReviews(c.Context(), uuid.MustParse(reqId), reviewType)
+	existingReviews, err := h.service.GetUserReviews(c.Context(), reqId, reviewType)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(Response{
