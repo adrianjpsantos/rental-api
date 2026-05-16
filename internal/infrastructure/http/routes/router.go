@@ -41,9 +41,9 @@ func SetupSwagger(app *fiber.App) {
 func SetupUserRoutes(router fiber.Router, handler *handlers.UserHandler) {
 	//Basic CRUD
 	router.Post("/users", handler.Create)
-	router.Get("/users/:id", handler.GetByID)
-	router.Put("/users/:id", handler.Update)
-	router.Delete("/users/:id", handler.Delete)
+	router.Get("/users/:user_id", handler.GetByID)
+	router.Put("/users/:user_id", handler.Update)
+	router.Delete("/users/:user_id", handler.Delete)
 
 	//Buscas
 	router.Post("/users/by-email", handler.GetByEmail)
@@ -55,7 +55,7 @@ func SetupUserRoutes(router fiber.Router, handler *handlers.UserHandler) {
 
 func SetupReviewRoutes(router fiber.Router, handler *handlers.ReviewHandler) {
 	router.Post("/reviews", handler.Create)
-	router.Get("/reviews/:id", handler.GetByID)
+	router.Get("/reviews/:review_id", handler.GetByID)
 
 	//Other Reads
 	router.Get("/rentals/:rental_id/reviews", handler.GetByRentalID)
@@ -64,4 +64,16 @@ func SetupReviewRoutes(router fiber.Router, handler *handlers.ReviewHandler) {
 	router.Get("/users/:user_id/reviews/given", handler.GetGivenReviews)
 
 	router.Get("/users/:user_id/reviews", handler.GetUserReviews)
+}
+
+func SetupRentalRoutes(router fiber.Router, handler *handlers.RentalHandler) {
+	router.Post("/rentals", handler.Create)
+	router.Get("/rentals/:rental_id", handler.GetByID)
+	router.Put("/rentals/:rental_id/status", handler.UpdateStatus)
+	router.Put("/rentals/:rental_id/cancel", handler.Cancel)
+
+	//Other Reads
+	router.Get("/users/:user_id/rentals", handler.GetAllUserRentals)
+	router.Get("/users/:user_id/rentals/lessee", handler.GetUserRentalsAsLessee)
+	router.Get("/users/:user_id/rentals/lessor", handler.GetUserRentalsAsLessor)
 }
