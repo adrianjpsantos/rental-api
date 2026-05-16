@@ -15,14 +15,3 @@ type InterfaceItemRepository interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 	Exists(ctx context.Context, id uuid.UUID) (bool, error)
 }
-
-// ItemFilter é usado para filtros na listagem
-type ItemFilter struct {
-	OwnerID    *uuid.UUID
-	CategoryID *uuid.UUID
-	MinPrice   *float64
-	MaxPrice   *float64
-	Location   string
-	Limit      int
-	Offset     int
-}

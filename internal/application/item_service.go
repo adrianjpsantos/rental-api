@@ -17,10 +17,10 @@ func NewItemService(itemRepo item.InterfaceItemRepository) *ItemService {
 	}
 }
 
-func (s *ItemService) Register(ctx context.Context, ownerID, categoryID uuid.UUID, title, description string, pricePerDay float64, quantity int) (*item.Item, error) {
+func (s *ItemService) Register(ctx context.Context, createInput item.ItemCreateInput) (*item.Item, error) {
 
 	// Cria a entidade usando o construtor do domínio
-	newItem, err := item.NewItem(ownerID, categoryID, title, description, pricePerDay, quantity)
+	newItem, err := item.NewItem(createInput)
 	if err != nil {
 		return nil, err
 	}

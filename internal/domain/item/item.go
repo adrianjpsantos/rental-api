@@ -37,6 +37,15 @@ type Item struct {
 	Category category.Category // se tiver
 }
 
+type ItemCreateInput struct {
+	OwnerID     uuid.UUID `json:"owner_id"`
+	CategoryID  uuid.UUID `json:"category_id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	PricePerDay float64   `json:"price_per_day"`
+	Quantity    int       `json:"quantity"`
+}
+
 type ItemUpdate struct {
 	Title        string   `json:"title"`
 	Description  string   `json:"description"`
@@ -47,17 +56,27 @@ type ItemUpdate struct {
 	Rules        string   `json:"rules,omitempty"`
 }
 
+type ItemFilter struct {
+	OwnerID    *uuid.UUID
+	CategoryID *uuid.UUID
+	MinPrice   *float64
+	MaxPrice   *float64
+	Location   string
+	Limit      int
+	Offset     int
+}
+
 // NewItem é o construtor da entidade
-func NewItem(ownerID, categoryID uuid.UUID, title, description string, pricePerDay float64, quantity int) (*Item, error) {
+func NewItem(createInput ItemCreateInput) (*Item, error) {
 	item := &Item{
 		Id:          uuid.New(),
-		OwnerID:     ownerID,
-		CategoryID:  categoryID,
-		Title:       title,
-		Description: description,
-		PricePerDay: pricePerDay,
-		Quantity:    quantity,
-		IsActive:    true,
+		OwnerID:     createInput.OwnerID,
+		CategoryID:  createInput.CategoryID,
+		Title:       createInput.Title,
+		Description: createInput.Description,
+		PricePerDay: createInput.PricePerDay,
+		Quantity:    createInput.Quantity,
+		IsActive:    false, // por padrão, o item começa inativo ate que o usuário complete o cadastro
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
