@@ -19,6 +19,7 @@ var (
 	ErrRentalPeriodTooLong  = errors.New("o período de aluguel excede o máximo permitido")
 
 	// Erros de status
+	ErrInvalidStatus          = errors.New("status do aluguel inválido")
 	ErrInvalidStatusTransition = errors.New("transição de status inválida")
 	ErrCannotCancelRental      = errors.New("não é possível cancelar este aluguel no status atual")
 

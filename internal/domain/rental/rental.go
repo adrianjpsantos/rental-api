@@ -55,7 +55,7 @@ type Rental struct {
 }
 
 // NewRental cria uma nova solicitação de aluguel
-func NewRental(itemID, lesseeID, lessorID uuid.UUID, startDate, endDate time.Time, totalAmount float64, deliveryMethod DeliveryMethod) (*Rental, error) {
+func NewRental(itemID, lesseeID, lessorID uuid.UUID, startDate, endDate time.Time, totalAmount float64, deliveryMethod DeliveryMethod, notes string) (*Rental, error) {
 	rental := &Rental{
 		Id:             uuid.New(),
 		ItemID:         itemID,
@@ -67,6 +67,7 @@ func NewRental(itemID, lesseeID, lessorID uuid.UUID, startDate, endDate time.Tim
 		Status:         Pending,
 		PaymentStatus:  PayPending,
 		DeliveryMethod: deliveryMethod,
+		Notes:          notes,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
 	}
