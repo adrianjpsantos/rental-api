@@ -9,7 +9,6 @@ type ReqByCPF struct {
 }
 
 type ReqUpdate struct {
-	Id       string     `json:"id"`
 	ToUpdate UserUpdate `json:"to_update"`
 }
 type ReqCreate struct {

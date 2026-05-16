@@ -3,8 +3,8 @@ package handlers
 import (
 	"github.com/adrianjpsantos/rental-api/internal/application"
 	"github.com/adrianjpsantos/rental-api/internal/domain/user"
+	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/handler_helpers"
 	"github.com/gofiber/fiber/v3"
-	"github.com/google/uuid"
 )
 
 type Response struct {
@@ -47,21 +47,21 @@ func (h *UserHandler) Create(c fiber.Ctx) error {
 	return c.JSON(Response{
 		Success: true,
 		Data: fiber.Map{
-			"created-user-id": createdUser.Id,
+			"created_user_id": createdUser.Id,
 		},
 	})
 
 }
 func (h *UserHandler) GetByID(c fiber.Ctx) error {
-	reqId := c.Params("id")
-	if _, err := uuid.Parse(reqId); err != nil {
+	reqId, err := handler_helpers.ParseUUIDParam(c, "user_id")
+	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Response{
 			Success: false,
 			Error:   "ID Inválido",
 		})
 	}
 
-	existingUser, err := h.service.GetByID(c.Context(), uuid.MustParse(reqId))
+	existingUser, err := h.service.GetByID(c.Context(), reqId)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(Response{
@@ -78,6 +78,15 @@ func (h *UserHandler) GetByID(c fiber.Ctx) error {
 	})
 }
 func (h *UserHandler) Update(c fiber.Ctx) error {
+
+	reqId, err := handler_helpers.ParseUUIDParam(c, "user_id")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Response{
+			Success: false,
+			Error:   "ID Inválido",
+		})
+	}
+
 	var req user.ReqUpdate
 
 	if err := c.Bind().Body(&req); err != nil {
@@ -87,7 +96,7 @@ func (h *UserHandler) Update(c fiber.Ctx) error {
 		})
 	}
 
-	updatedUser, err := h.service.UpdateProfile(c.Context(), uuid.MustParse(req.Id), req.ToUpdate)
+	updatedUser, err := h.service.UpdateProfile(c.Context(), reqId, req.ToUpdate)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(Response{
@@ -106,15 +115,15 @@ func (h *UserHandler) Update(c fiber.Ctx) error {
 }
 func (h *UserHandler) Delete(c fiber.Ctx) error {
 
-	reqId := c.Params("id")
-	if _, err := uuid.Parse(reqId); err != nil {
+	reqId, err := handler_helpers.ParseUUIDParam(c, "user_id")
+	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Response{
 			Success: false,
 			Error:   "ID Inválido",
 		})
 	}
 
-	err := h.service.Delete(c.Context(), uuid.MustParse(reqId))
+	err = h.service.Delete(c.Context(), reqId)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(Response{
