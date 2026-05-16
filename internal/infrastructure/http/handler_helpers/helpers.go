@@ -1,6 +1,7 @@
 package handler_helpers
 
 import (
+	"github.com/adrianjpsantos/rental-api/internal/domain/item"
 	"github.com/adrianjpsantos/rental-api/internal/domain/rental"
 	"github.com/adrianjpsantos/rental-api/internal/domain/review"
 	"github.com/gofiber/fiber/v3"
@@ -30,4 +31,22 @@ func ParseReviewTypeQuery(c fiber.Ctx) (*review.ReviewType, error) {
 	}
 
 	return review.ParseReviewType(q)
+}
+
+func ParseItemFilters(c fiber.Ctx) (item.ItemFilter, error) {
+	var req item.ReqListByFilter
+	if err := c.Bind().Body(&req); err != nil {
+		return item.ItemFilter{}, err
+	}
+
+	return req.Filter, nil
+}
+
+func ParseCreateRental(c fiber.Ctx) (rental.Rental, error) {
+	var req rental.ReqCreate
+	if err := c.Bind().Body(&req); err != nil {
+		return rental.Rental{}, err
+	}
+
+	return req.NewRental, nil
 }

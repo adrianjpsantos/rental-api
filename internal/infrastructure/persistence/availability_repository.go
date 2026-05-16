@@ -13,6 +13,10 @@ type AvailabilityRepository struct {
 	db *sql.DB
 }
 
+func NewAvailabilityRepository(db *sql.DB) availability.InterfaceAvailabilityRepository {
+	return &AvailabilityRepository{db: db}
+}
+
 // Create
 func (r *AvailabilityRepository) Create(ctx context.Context, slot *availability.AvailabilitySlot) error {
 	query := `

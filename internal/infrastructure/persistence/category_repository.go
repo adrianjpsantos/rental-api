@@ -12,6 +12,10 @@ type CategoryRepository struct {
 	db *sql.DB
 }
 
+func NewCategoryRepository(db *sql.DB) category.InterfaceCategoryRepository {
+	return &CategoryRepository{db: db}
+}
+
 // Create
 func (r *CategoryRepository) Create(ctx context.Context, c *category.Category) error {
 	query := `
