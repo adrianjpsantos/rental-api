@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"log"
 
 	"github.com/adrianjpsantos/rental-api/internal/domain/review"
 	"github.com/adrianjpsantos/rental-api/internal/domain/user"
@@ -42,7 +43,11 @@ func (s *ReviewService) Register(ctx context.Context, rentalID uuid.UUID, review
 		return nil, err
 	}
 
-	return newReview, s.userRepo.UpdateReputationCache(ctx, reviewedID)
+	if err := s.userRepo.UpdateReputationCache(ctx, reviewedID); err != nil {
+		log.Println(err)
+	}
+
+	return newReview, nil
 }
 
 func (s *ReviewService) GetByID(ctx context.Context, id uuid.UUID) (*review.Review, error) {
