@@ -204,6 +204,60 @@ func (r *RentalRepository) ListByLessor(ctx context.Context, lessorID uuid.UUID,
 	return rentals, nil
 }
 
+func (r *RentalRepository) GetAllUserRentals(ctx context.Context, userID uuid.UUID, status *rental.Status) ([]*rental.Rental, error) {
+	var rentals []*rental.Rental
+
+	query := `SELECT id, item_id, lessee_id, lessor_id, start_date, end_date, total_amount, status, payment_status, delivery_method, notes, created_at, updated_at, started_at, completed_at, cancelled_at
+			  FROM rentals WHERE (lessor_id = $1 OR lessee_id = $1)`
+
+	args := []interface{}{userID}
+
+	if status != nil {
+		query += " AND status = $2"
+		args = append(args, *status)
+	}
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var rent rental.Rental
+
+		err := rows.Scan(
+			&rent.Id,
+			&rent.ItemID,
+			&rent.LesseeID,
+			&rent.LessorID,
+			&rent.StartDate,
+			&rent.EndDate,
+			&rent.TotalAmount,
+			&rent.Status,
+			&rent.PaymentStatus,
+			&rent.DeliveryMethod,
+			&rent.Notes,
+			&rent.CreatedAt,
+			&rent.UpdatedAt,
+			&rent.StartedAt,
+			&rent.CompletedAt,
+			&rent.CancelledAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		rentals = append(rentals, &rent)
+	}
+
+	if len(rentals) == 0 {
+		return nil, rental.ErrNoRentalsFound
+	}
+
+	return rentals, nil
+}
+
 // Update implements [rental.InterfaceRentalRepository].
 func (r *RentalRepository) Update(ctx context.Context, rent *rental.Rental) error {
 	query := `
@@ -218,11 +272,11 @@ func (r *RentalRepository) Update(ctx context.Context, rent *rental.Rental) erro
 			payment_status = $8,
 			delivery_method = $9,
 			notes = $10,
-			update_at = NOW(),
-			started_at = $11,
-			complete_at = $12,
-			cancelled_at = $13
-		WHERE id = $14
+			update_at = $11,
+			started_at = $12,
+			complete_at = $13,
+			cancelled_at = $14
+		WHERE id = $15
 	`
 
 	result, err := r.db.ExecContext(ctx, query,
@@ -236,38 +290,13 @@ func (r *RentalRepository) Update(ctx context.Context, rent *rental.Rental) erro
 		rent.PaymentStatus,
 		rent.DeliveryMethod,
 		rent.Notes,
+		rent.UpdatedAt,
 		rent.StartedAt,
 		rent.CompletedAt,
 		rent.CancelledAt,
 		rent.Id,
 	)
 
-	if err != nil {
-		return err
-	}
-
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rows == 0 {
-		return rental.ErrRentalNotFound
-	}
-
-	return nil
-}
-
-// UpdateStatus implements [rental.InterfaceRentalRepository].
-func (r *RentalRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status rental.Status) error {
-	query := `
-		UPDATE rentals
-		SET status = $1,
-			update_at = NOW()
-		WHERE id = $2
-	`
-
-	result, err := r.db.ExecContext(ctx, query, status, id)
 	if err != nil {
 		return err
 	}
