@@ -14,6 +14,25 @@ type UserRepository struct {
 	db *sql.DB
 }
 
+func (r *UserRepository) GetUserForAuthentication(ctx context.Context, email string) (*user.UserForAuthentication, error) {
+	var u user.UserForAuthentication
+
+	query := `SELECT id,password_hash FROM users WHERE email = $1`
+	err := r.db.QueryRowContext(ctx, query, email).Scan(
+		&u.UserID,
+		&u.PasswordHash)
+
+	if err == sql.ErrNoRows {
+		return nil, user.ErrUserNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("❕USER FOR AUTHENTICATION: ", true)
+	return &u, nil
+}
+
 func (r *UserRepository) Create(ctx context.Context, u *user.User) error {
 
 	existsEmail, err := r.ExistsByEmail(ctx, u.Email)

@@ -40,6 +40,11 @@ type UserUpdate struct {
 	BirthDate time.Time `json:"birth_date"`
 }
 
+type UserForAuthentication struct {
+	UserID       uuid.UUID `json:"user_id"`
+	PasswordHash string    `json:"password_hash"`
+}
+
 type UserCreateInput struct {
 	Name      string    `json:"name" validate:"required"`
 	Email     string    `json:"email" validate:"required,email"`

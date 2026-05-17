@@ -9,6 +9,7 @@ import (
 type InterfaceUserRepository interface {
 	Create(ctx context.Context, user *User) error
 	GetByID(ctx context.Context, userID uuid.UUID) (*User, error)
+	GetUserForAuthentication(ctx context.Context, email string) (*UserForAuthentication, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	GetByCPF(ctx context.Context, cpf string) (*User, error)
 	Update(ctx context.Context, user *User) error
