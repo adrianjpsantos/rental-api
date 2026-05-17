@@ -3,9 +3,9 @@ package application
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/adrianjpsantos/rental-api/internal/domain/user"
+	"github.com/adrianjpsantos/rental-api/internal/security"
 	"github.com/google/uuid"
 )
 
@@ -22,10 +22,10 @@ func NewUserService(userRepo user.InterfaceUserRepository) *UserService {
 }
 
 // Register cria um novo usuário no sistema
-func (s *UserService) Register(ctx context.Context, name, email, passwordHash, cpf, phone string, birthDate time.Time, role user.Role) (*user.User, error) {
+func (s *UserService) Register(ctx context.Context, newUserInput user.UserCreateInput) (*user.User, error) {
 
 	// Verifica se o email já existe
-	exists, err := s.userRepo.ExistsByEmail(ctx, email)
+	exists, err := s.userRepo.ExistsByEmail(ctx, newUserInput.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -34,8 +34,8 @@ func (s *UserService) Register(ctx context.Context, name, email, passwordHash, c
 	}
 
 	// Verifica se o CPF já existe (se informado)
-	if cpf != "" {
-		exists, err = s.userRepo.ExistsByCPF(ctx, cpf)
+	if newUserInput.Cpf != "" {
+		exists, err = s.userRepo.ExistsByCPF(ctx, newUserInput.Cpf)
 		if err != nil {
 			return nil, err
 		}
@@ -44,8 +44,15 @@ func (s *UserService) Register(ctx context.Context, name, email, passwordHash, c
 		}
 	}
 
+	passwordHashed, err := security.GenerateHashedPassword(newUserInput.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	newUserInput.Password = passwordHashed
 	// Cria a entidade usando o construtor do domínio
-	newUser, err := user.NewUser(name, email, passwordHash, cpf, phone, birthDate, role)
+	newUser, err := user.NewUser(newUserInput)
+
 	if err != nil {
 		return nil, err
 	}

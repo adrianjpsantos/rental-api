@@ -40,16 +40,26 @@ type UserUpdate struct {
 	BirthDate time.Time `json:"birth_date"`
 }
 
-func NewUser(name, email, passwordHash string, cpf, phone string, birthDate time.Time, role Role) (*User, error) {
+type UserCreateInput struct {
+	Name      string    `json:"name" validate:"required"`
+	Email     string    `json:"email" validate:"required,email"`
+	Password  string    `json:"password" validate:"required,min=6"`
+	Cpf       string    `json:"cpf" validate:"required"`
+	Phone     string    `json:"phone" validate:"required"`
+	BirthDate time.Time `json:"birth_date" validate:"required"`
+	Role      Role      `json:"role" validate:"required,oneof=admin lessor lessee"`
+}
+
+func NewUser(newUser UserCreateInput) (*User, error) {
 	user := &User{
 		Id:           uuid.New(),
-		Name:         name,
-		Email:        email,
-		PasswordHash: passwordHash,
-		CPF:          cpf,
-		Phone:        phone,
-		BirthDate:    birthDate,
-		Role:         role,
+		Name:         newUser.Name,
+		Email:        newUser.Email,
+		PasswordHash: newUser.Password, // A senha será hashada no serviço ("Recebe a senha em texto plano, mas armazena o hash ao criar a entidade")
+		CPF:          newUser.Cpf,
+		Phone:        newUser.Phone,
+		BirthDate:    newUser.BirthDate,
+		Role:         newUser.Role,
 		IsVerified:   false,
 		Reputation:   0,
 		CreatedAt:    time.Now(),

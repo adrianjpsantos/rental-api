@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 // Validate valida as regras de negócio da entidade User
@@ -109,18 +107,4 @@ func calculateSecondVerifierDigit(cpf string, firstDigit int) int {
 		return 0
 	}
 	return 11 - remainder
-}
-
-// Use Only on Create User on DB or Update password
-func (u *User) GenerateHashedPassword() string {
-	pass := []byte(u.PasswordHash)
-
-	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
-	if err != nil {
-		panic(err)
-	}
-
-	u.PasswordHash = string(hash)
-
-	return string(hash)
 }

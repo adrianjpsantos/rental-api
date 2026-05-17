@@ -12,5 +12,5 @@ type ReqUpdate struct {
 	ToUpdate UserUpdate `json:"to_update"`
 }
 type ReqCreate struct {
-	NewUser User `json:"new_user"`
+	NewUser UserCreateInput `json:"new_user"`
 }

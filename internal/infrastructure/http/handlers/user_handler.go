@@ -23,16 +23,13 @@ func NewUserHandler(service *application.UserService) *UserHandler {
 
 // CRUD Básico
 func (h *UserHandler) Create(c fiber.Ctx) error {
-	var req user.ReqCreate
+	newUser, err := handler_helpers.ParseCreateUser(c)
 
-	if err := c.Bind().Body(&req); err != nil {
+	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
 
-	newUser := req.NewUser
-	newUser.GenerateHashedPassword()
-
-	createdUser, err := h.service.Register(c.Context(), newUser.Name, newUser.Email, newUser.PasswordHash, newUser.CPF, newUser.Phone, newUser.BirthDate, newUser.Role)
+	createdUser, err := h.service.Register(c.Context(), newUser)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
@@ -40,17 +37,16 @@ func (h *UserHandler) Create(c fiber.Ctx) error {
 
 	return ResponseSuccess(c, fiber.Map{
 		"created_user_id": createdUser.Id,
-	},
-	)
-
+	})
 }
+
 func (h *UserHandler) GetByID(c fiber.Ctx) error {
-	reqId, err := handler_helpers.ParseUUIDParam(c, "user_id")
+	userId, err := handler_helpers.ParseUUIDParam(c, "user_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	existingUser, err := h.service.GetByID(c.Context(), reqId)
+	existingUser, err := h.service.GetByID(c.Context(), userId)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
@@ -63,18 +59,17 @@ func (h *UserHandler) GetByID(c fiber.Ctx) error {
 }
 func (h *UserHandler) Update(c fiber.Ctx) error {
 
-	reqId, err := handler_helpers.ParseUUIDParam(c, "user_id")
+	userId, err := handler_helpers.ParseUUIDParam(c, "user_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	var req user.ReqUpdate
-
-	if err := c.Bind().Body(&req); err != nil {
+	toUpdate, err := handler_helpers.ParseUpdateUser(c)
+	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
 
-	updatedUser, err := h.service.UpdateProfile(c.Context(), reqId, req.ToUpdate)
+	updatedUser, err := h.service.UpdateProfile(c.Context(), userId, toUpdate)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
@@ -88,19 +83,19 @@ func (h *UserHandler) Update(c fiber.Ctx) error {
 }
 func (h *UserHandler) Delete(c fiber.Ctx) error {
 
-	reqId, err := handler_helpers.ParseUUIDParam(c, "user_id")
+	userId, err := handler_helpers.ParseUUIDParam(c, "user_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	err = h.service.Delete(c.Context(), reqId)
+	err = h.service.Delete(c.Context(), userId)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
 	return ResponseSuccess(c, fiber.Map{
-		"deleted_id": reqId,
+		"deleted_id": userId,
 	},
 	)
 }
