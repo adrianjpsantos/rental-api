@@ -2,10 +2,9 @@ package authenticate
 
 import (
 	"context"
-
-	"github.com/adrianjpsantos/rental-api/internal/domain/user"
 )
 
 type InterfaceAuthenticateService interface {
-	Authenticate(ctx context.Context, authenticateInput AuthenticateInput) (user.User, error)
+	Authenticate(ctx context.Context, authenticateInput AuthenticateInput) (*AuthenticateOutput, error)
+	Logout(ctx context.Context, userID string) error
 }

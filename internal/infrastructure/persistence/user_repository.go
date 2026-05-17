@@ -17,10 +17,12 @@ type UserRepository struct {
 func (r *UserRepository) GetUserForAuthentication(ctx context.Context, email string) (*user.UserForAuthentication, error) {
 	var u user.UserForAuthentication
 
-	query := `SELECT id,password_hash FROM users WHERE email = $1`
+	query := `SELECT id,password_hash,email,name FROM users WHERE email = $1`
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
 		&u.UserID,
-		&u.PasswordHash)
+		&u.PasswordHash,
+		&u.Email,
+		&u.Name)
 
 	if err == sql.ErrNoRows {
 		return nil, user.ErrUserNotFound

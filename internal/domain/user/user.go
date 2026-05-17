@@ -43,6 +43,8 @@ type UserUpdate struct {
 type UserForAuthentication struct {
 	UserID       uuid.UUID `json:"user_id"`
 	PasswordHash string    `json:"password_hash"`
+	Email        string    `json:"email"`
+	Name         string    `json:"name"`
 }
 
 type UserCreateInput struct {
