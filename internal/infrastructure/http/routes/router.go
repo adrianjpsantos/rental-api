@@ -9,7 +9,7 @@ import (
 	"github.com/adrianjpsantos/rental-api/internal/domain/category"
 	"github.com/adrianjpsantos/rental-api/internal/domain/item"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/handlers"
-	"github.com/adrianjpsantos/rental-api/internal/infrastructure/persistence"
+	"github.com/adrianjpsantos/rental-api/internal/infrastructure/repositories"
 	swaggo "github.com/gofiber/contrib/v3/swaggo"
 	"github.com/gofiber/fiber/v3"
 )
@@ -18,7 +18,7 @@ func SetupRouter(db *sql.DB) *fiber.App {
 	app := fiber.New()
 
 	//Repositories, Services e Handlers
-	repositories := persistence.NewAllRepositories(db)
+	repositories := repositories.NewAllRepositories(db)
 	services := application.NewAllServices(repositories)
 	apiHandlers := handlers.NewAllHandlers(services)
 

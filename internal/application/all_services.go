@@ -1,6 +1,10 @@
 package application
 
-import "github.com/adrianjpsantos/rental-api/internal/infrastructure/persistence"
+import (
+	"github.com/adrianjpsantos/rental-api/internal/domain/authenticate"
+	"github.com/adrianjpsantos/rental-api/internal/domain/token"
+	"github.com/adrianjpsantos/rental-api/internal/infrastructure/repositories"
+)
 
 type AllServices struct {
 	UserService         *UserService
@@ -9,9 +13,11 @@ type AllServices struct {
 	ItemService         *ItemService
 	AvailabilityService *AvailabilityService
 	CategoryService     *CategoryService
+	AuthService         authenticate.InterfaceAuthenticateService
+	TokenService        token.InterfaceTokenService
 }
 
-func NewAllServices(repos *persistence.AllRepositories) *AllServices {
+func NewAllServices(repos *repositories.AllRepositories) *AllServices {
 	userService := NewUserService(repos.UserRepo)
 
 	reviewService := NewReviewService(
@@ -35,6 +41,10 @@ func NewAllServices(repos *persistence.AllRepositories) *AllServices {
 		repos.CategoryRepo,
 	)
 
+	tokenService := NewTokenService()
+
+	authService := NewAuthService(repos.UserRepo, tokenService)
+
 	return &AllServices{
 		UserService:         userService,
 		ReviewService:       reviewService,
@@ -42,5 +52,7 @@ func NewAllServices(repos *persistence.AllRepositories) *AllServices {
 		ItemService:         itemService,
 		AvailabilityService: availabilityService,
 		CategoryService:     categoryService,
+		TokenService:        tokenService,
+		AuthService:         authService,
 	}
 }
