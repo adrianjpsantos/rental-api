@@ -19,7 +19,10 @@ type Config struct {
 		SSLMode  string
 	}
 	JWT struct {
-		Secret string
+		AccessSecret   string
+		RefreshSecret  string
+		AccessExpires  string
+		RefreshExpires string
 	}
 }
 
@@ -40,7 +43,25 @@ func LoadConfig() *Config {
 	cfg.Database.SSLMode = getEnv("DB_SSLMODE", "disable")
 
 	// JWT
-	cfg.JWT.Secret = getEnv("JWT_SECRET", "sua-chave-secreta-muito-forte")
+	cfg.JWT.AccessSecret = getEnv(
+		"JWT_ACCESS_SECRET",
+		"super-access-secret-key",
+	)
+
+	cfg.JWT.RefreshSecret = getEnv(
+		"JWT_REFRESH_SECRET",
+		"super-refresh-secret-key",
+	)
+
+	cfg.JWT.AccessExpires = getEnv(
+		"JWT_ACCESS_EXPIRES",
+		"15m",
+	)
+
+	cfg.JWT.RefreshExpires = getEnv(
+		"JWT_REFRESH_EXPIRES",
+		"168h",
+	)
 
 	return cfg
 }
