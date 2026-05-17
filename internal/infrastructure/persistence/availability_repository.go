@@ -71,7 +71,7 @@ func (r *AvailabilityRepository) GetByID(ctx context.Context, id uuid.UUID) (*av
 }
 
 // FindByItemID
-func (r *AvailabilityRepository) FindByItemID(ctx context.Context, itemID uuid.UUID) ([]*availability.AvailabilitySlot, error) {
+func (r *AvailabilityRepository) ListByItemID(ctx context.Context, itemID uuid.UUID) ([]*availability.AvailabilitySlot, error) {
 	query := `
 		SELECT id, item_id, start_date, end_date,
 		       type, reason, created_at
@@ -115,7 +115,7 @@ func (r *AvailabilityRepository) FindByItemID(ctx context.Context, itemID uuid.U
 }
 
 // FindOverlapping (REGRA CRÍTICA)
-func (r *AvailabilityRepository) FindOverlapping(
+func (r *AvailabilityRepository) ListOverlapping(
 	ctx context.Context,
 	itemID uuid.UUID,
 	startDate, endDate time.Time,
@@ -182,7 +182,7 @@ func (r *AvailabilityRepository) Delete(ctx context.Context, id uuid.UUID) error
 }
 
 // HasBlockingSlot (rápido e eficiente)
-func (r *AvailabilityRepository) HasBlockingSlot(
+func (r *AvailabilityRepository) ExistsBlockingSlot(
 	ctx context.Context,
 	itemID uuid.UUID,
 	startDate, endDate time.Time,

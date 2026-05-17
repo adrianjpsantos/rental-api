@@ -18,9 +18,9 @@ func NewAvailabilityService(availabilitySlotRepo availability.InterfaceAvailabil
 	}
 }
 
-func (s *AvailabilityService) Register(ctx context.Context, itemID uuid.UUID, startDate, endDate time.Time, slotType availability.AvailabilityType, reason availability.Reason) (*availability.AvailabilitySlot, error) {
+func (s *AvailabilityService) Register(ctx context.Context, newSlot availability.AvailabilitySlotCreateInput) (*availability.AvailabilitySlot, error) {
 
-	exists, err := s.availabilitySlotRepo.HasBlockingSlot(ctx, itemID, startDate, endDate)
+	exists, err := s.availabilitySlotRepo.ExistsBlockingSlot(ctx, newSlot.ItemID, newSlot.StartDate, newSlot.EndDate)
 	if err != nil {
 		return nil, err
 	}
@@ -29,46 +29,29 @@ func (s *AvailabilityService) Register(ctx context.Context, itemID uuid.UUID, st
 	}
 
 	// Cria a entidade usando o construtor do domínio
-	newSlot, err := availability.NewAvailabilitySlot(itemID, startDate, endDate, slotType, reason)
+	newAvailabilitySlot, err := availability.NewAvailabilitySlot(newSlot)
 	if err != nil {
 		return nil, err
 	}
 
 	// Persiste no banco
-	if err := s.availabilitySlotRepo.Create(ctx, newSlot); err != nil {
+	if err := s.availabilitySlotRepo.Create(ctx, newAvailabilitySlot); err != nil {
 		return nil, err
 	}
 
-	return newSlot, nil
+	return newAvailabilitySlot, nil
 }
 
 func (s *AvailabilityService) GetByID(ctx context.Context, slotID uuid.UUID) (*availability.AvailabilitySlot, error) {
-	existingAvailability, err := s.availabilitySlotRepo.GetByID(ctx, slotID)
-	if err != nil {
-		return nil, err
-	}
-	if existingAvailability == nil {
-		return nil, availability.ErrSlotNotFound
-	}
-	return existingAvailability, nil
+	return s.availabilitySlotRepo.GetByID(ctx, slotID)
 }
 
-func (s *AvailabilityService) FindByItemID(ctx context.Context, itemID uuid.UUID) ([]*availability.AvailabilitySlot, error) {
-	listAvailability, err := s.availabilitySlotRepo.FindByItemID(ctx, itemID)
-	if err != nil {
-		return nil, err
-	}
-
-	return listAvailability, nil
+func (s *AvailabilityService) ListByItemID(ctx context.Context, itemID uuid.UUID) ([]*availability.AvailabilitySlot, error) {
+	return s.availabilitySlotRepo.ListByItemID(ctx, itemID)
 }
 
-func (s *AvailabilityService) FindOverlapping(ctx context.Context, itemID uuid.UUID, startDate, endDate time.Time) ([]*availability.AvailabilitySlot, error) {
-	listAvailability, err := s.availabilitySlotRepo.FindOverlapping(ctx, itemID, startDate, endDate)
-	if err != nil {
-		return nil, err
-	}
-
-	return listAvailability, nil
+func (s *AvailabilityService) ListOverlapping(ctx context.Context, itemID uuid.UUID, startDate, endDate time.Time) ([]*availability.AvailabilitySlot, error) {
+	return s.availabilitySlotRepo.ListOverlapping(ctx, itemID, startDate, endDate)
 }
 
 func (s *AvailabilityService) Delete(ctx context.Context, slotID uuid.UUID) error {
@@ -79,4 +62,8 @@ func (s *AvailabilityService) Delete(ctx context.Context, slotID uuid.UUID) erro
 	}
 
 	return nil
+}
+
+func (s *AvailabilityService) ExistBlockingSlot(ctx context.Context, itemID uuid.UUID, startDate, endDate time.Time) (bool, error) {
+	return s.availabilitySlotRepo.ExistsBlockingSlot(ctx, itemID, startDate, endDate)
 }

@@ -22,14 +22,25 @@ const (
 	OwnerBlock  Reason = "owner_block"
 )
 
-type AvailabilitySlot struct {
-	Id        uuid.UUID
-	ItemId    uuid.UUID
+type SlotDates struct {
 	StartDate time.Time
 	EndDate   time.Time
-	Type      AvailabilityType
-	Reason    Reason
-	CreatedAt time.Time
+}
+
+type AvailabilityFilter struct {
+	ItemID uuid.UUID
+	Dates  SlotDates
+	Type   *AvailabilityType
+	Reason *Reason
+}
+
+type AvailabilitySlot struct {
+	Id                 uuid.UUID
+	ItemId             uuid.UUID
+	StartDate, EndDate time.Time
+	Type               AvailabilityType
+	Reason             Reason
+	CreatedAt          time.Time
 
 	// Índice composto (útil para consultas de disponibilidade)
 	ItemIdStartEndIdx string // ignorado
@@ -38,20 +49,24 @@ type AvailabilitySlot struct {
 	Item item.Item
 }
 
+type AvailabilitySlotCreateInput struct {
+	ItemID             uuid.UUID
+	StartDate, EndDate time.Time
+	SlotType           AvailabilityType
+	Reason             Reason
+}
+
 func NewAvailabilitySlot(
-	itemID uuid.UUID,
-	startDate, endDate time.Time,
-	slotType AvailabilityType,
-	reason Reason,
+	newSlot AvailabilitySlotCreateInput,
 ) (*AvailabilitySlot, error) {
 
 	slot := &AvailabilitySlot{
 		Id:        uuid.New(),
-		ItemId:    itemID,
-		StartDate: startDate,
-		EndDate:   endDate,
-		Type:      slotType,
-		Reason:    reason,
+		ItemId:    newSlot.ItemID,
+		StartDate: newSlot.StartDate,
+		EndDate:   newSlot.EndDate,
+		Type:      newSlot.SlotType,
+		Reason:    newSlot.Reason,
 		CreatedAt: time.Now(),
 	}
 

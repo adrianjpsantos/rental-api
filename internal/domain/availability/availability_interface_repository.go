@@ -10,9 +10,9 @@ import (
 type InterfaceAvailabilityRepository interface {
 	Create(ctx context.Context, slot *AvailabilitySlot) error
 	GetByID(ctx context.Context, id uuid.UUID) (*AvailabilitySlot, error)
-	FindByItemID(ctx context.Context, itemID uuid.UUID) ([]*AvailabilitySlot, error)
-	FindOverlapping(ctx context.Context, itemID uuid.UUID, startDate, endDate time.Time) ([]*AvailabilitySlot, error)
+	ListByItemID(ctx context.Context, itemID uuid.UUID) ([]*AvailabilitySlot, error)
+	ListOverlapping(ctx context.Context, itemID uuid.UUID, startDate, endDate time.Time) ([]*AvailabilitySlot, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 	// Método útil para verificar disponibilidade rapidamente
-	HasBlockingSlot(ctx context.Context, itemID uuid.UUID, startDate, endDate time.Time) (bool, error)
+	ExistsBlockingSlot(ctx context.Context, itemID uuid.UUID, startDate, endDate time.Time) (bool, error)
 }
