@@ -7,7 +7,8 @@ import (
 )
 
 type Config struct {
-	Server struct {
+	Environment string
+	Server      struct {
 		Port string
 	}
 	Database struct {
@@ -30,6 +31,8 @@ func LoadConfig() *Config {
 	_ = godotenv.Load() // carrega .env se existir
 
 	cfg := &Config{}
+
+	cfg.Environment = getEnv("APP_ENV", "development")
 
 	// Server
 	cfg.Server.Port = getEnv("SERVER_PORT", "8080")
@@ -64,6 +67,10 @@ func LoadConfig() *Config {
 	)
 
 	return cfg
+}
+
+func (c *Config) IsProduction() bool {
+	return c.Environment == "production"
 }
 
 func getEnv(key, defaultValue string) string {

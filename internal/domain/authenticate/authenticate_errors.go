@@ -4,7 +4,7 @@ import "errors"
 
 var (
 	ErrInvalidCredentials = errors.New(
-		"credenciais inválidas",
+		"Email ou senha inválidos",
 	)
 
 	ErrInvalidToken = errors.New(

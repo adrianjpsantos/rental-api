@@ -21,13 +21,14 @@ func (a *AuthService) Logout(ctx context.Context, userID string) error {
 func (a *AuthService) Authenticate(
 	ctx context.Context,
 	input authenticate.AuthenticateInput,
-) (*authenticate.AuthenticateOutput, error) {
+) (authenticate.AuthenticateOutput, error) {
+	emptyOutput := authenticate.AuthenticateOutput{}
 
 	userForAuth, err := a.UserRepo.
 		GetUserForAuthentication(ctx, input.Email)
 
 	if err != nil {
-		return nil, authenticate.ErrInvalidCredentials
+		return emptyOutput, authenticate.ErrInvalidCredentials
 	}
 
 	err = security.CheckPassword(
@@ -36,7 +37,7 @@ func (a *AuthService) Authenticate(
 	)
 
 	if err != nil {
-		return nil, authenticate.ErrInvalidCredentials
+		return emptyOutput, authenticate.ErrInvalidCredentials
 	}
 
 	payload := authenticate.AuthenticatePayload{
@@ -46,16 +47,16 @@ func (a *AuthService) Authenticate(
 	accessToken, err := a.TokenService.GenerateAccessToken(ctx, payload)
 
 	if err != nil {
-		return nil, err
+		return emptyOutput, err
 	}
 
 	refreshToken, err := a.TokenService.GenerateRefreshToken(ctx, payload)
 
 	if err != nil {
-		return nil, err
+		return emptyOutput, err
 	}
 
-	return &authenticate.AuthenticateOutput{
+	return authenticate.AuthenticateOutput{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
