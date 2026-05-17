@@ -5,6 +5,8 @@ import (
 
 	_ "github.com/adrianjpsantos/rental-api/docs"
 	"github.com/adrianjpsantos/rental-api/internal/application"
+	"github.com/adrianjpsantos/rental-api/internal/domain/availability"
+	"github.com/adrianjpsantos/rental-api/internal/domain/category"
 	"github.com/adrianjpsantos/rental-api/internal/domain/item"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/handlers"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/persistence"
@@ -28,8 +30,8 @@ func SetupRouter(db *sql.DB) *fiber.App {
 	SetupReviewRoutes(api, apiHandlers.ReviewHandler)
 	SetupRentalRoutes(api, apiHandlers.RentalHandler)
 	SetupItemRoutes(api, apiHandlers.ItemHandler)
-	//SetupAvailabilityRoutes(api, apiHandlers.AvailabilityHandler)
-	//SetupCategoryRoutes(api, apiHandlers.CategoryHandler)
+	SetupAvailabilityRoutes(api, apiHandlers.AvailabilityHandler)
+	SetupCategoryRoutes(api, apiHandlers.CategoryHandler)
 
 	return app
 }
@@ -93,5 +95,23 @@ func SetupItemRoutes(router fiber.Router, handler item.InterfaceItemHandler) {
 	router.Delete("/items/:item_id", handler.DeleteItem)
 
 	//Other Reads
-	router.Post("/items/search", handler.ListItems)
+	router.Post("/items/search", handler.ListItems) // filtros de busca no body
+}
+
+func SetupAvailabilityRoutes(router fiber.Router, handler availability.InterfaceAvailabilityHandler) {
+	router.Post("/availability", handler.Create)
+	router.Get("/availability/:availability_id", handler.GetByID)
+	router.Delete("/availability/:availability_id", handler.Delete)
+
+	//Other Reads
+	router.Get("/items/:item_id/availability", handler.GetByItemID)
+	router.Post("/items/:item_id/check-availability", handler.CheckAvailability)
+}
+
+func SetupCategoryRoutes(router fiber.Router, handler category.InterfaceCategoryHandler) {
+	router.Post("/categories", handler.CreateCategory)
+	router.Get("/categories", handler.ListCategories)
+	router.Get("/categories/:category_id", handler.GetCategoryByID)
+	router.Put("/categories/:category_id", handler.UpdateCategory)
+	router.Delete("/categories/:category_id", handler.DeleteCategory)
 }
