@@ -3,7 +3,7 @@ package handlers
 import (
 	"github.com/adrianjpsantos/rental-api/internal/application"
 	"github.com/adrianjpsantos/rental-api/internal/domain/availability"
-	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/handler_helpers"
+	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/request"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -13,12 +13,12 @@ type AvailabilityHandler struct {
 
 func (h *AvailabilityHandler) CheckAvailability(c fiber.Ctx) error {
 
-	toCheck, err := handler_helpers.ParseDatesAndItemID(c)
+	toCheck, err := request.ParseDatesAndItemID(c)
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
 
-	exists, err := h.service.ExistBlockingSlot(c.Context(), toCheck.ItemID, toCheck.Dates.StartDate, toCheck.Dates.EndDate)
+	exists, err := h.service.ExistBlockingSlot(c.Context(), toCheck.ItemID, toCheck.StartDate, toCheck.EndDate)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
@@ -32,7 +32,7 @@ func (h *AvailabilityHandler) CheckAvailability(c fiber.Ctx) error {
 
 func (h *AvailabilityHandler) Create(c fiber.Ctx) error {
 
-	newSlot, err := handler_helpers.ParseCreateAvailabilitySlot(c)
+	newSlot, err := request.ParseAvailabilitySlotCreateInput(c)
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
@@ -49,7 +49,7 @@ func (h *AvailabilityHandler) Create(c fiber.Ctx) error {
 }
 
 func (h *AvailabilityHandler) Delete(c fiber.Ctx) error {
-	slotId, err := handler_helpers.ParseUUIDParam(c, "slot_id")
+	slotId, err := request.ParseUUIDParam(c, "slot_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
@@ -65,7 +65,7 @@ func (h *AvailabilityHandler) Delete(c fiber.Ctx) error {
 }
 
 func (h *AvailabilityHandler) GetByID(c fiber.Ctx) error {
-	slotId, err := handler_helpers.ParseUUIDParam(c, "slot_id")
+	slotId, err := request.ParseUUIDParam(c, "slot_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
@@ -83,7 +83,7 @@ func (h *AvailabilityHandler) GetByID(c fiber.Ctx) error {
 }
 
 func (h *AvailabilityHandler) GetByItemID(c fiber.Ctx) error {
-	itemId, err := handler_helpers.ParseUUIDParam(c, "item_id")
+	itemId, err := request.ParseUUIDParam(c, "item_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}

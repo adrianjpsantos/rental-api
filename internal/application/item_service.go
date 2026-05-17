@@ -55,7 +55,7 @@ func (s *ItemService) ListByFilters(ctx context.Context, itemFilter item.ItemFil
 	return listItem, nil
 }
 
-func (s *ItemService) Update(ctx context.Context, itemID uuid.UUID, updated *item.ItemUpdate) (*item.Item, error) {
+func (s *ItemService) Update(ctx context.Context, itemID uuid.UUID, updated item.ItemUpdate) (*item.Item, error) {
 
 	existingItem, err := s.itemRepo.GetByID(ctx, itemID)
 	if err != nil {
@@ -65,7 +65,7 @@ func (s *ItemService) Update(ctx context.Context, itemID uuid.UUID, updated *ite
 		return nil, item.ErrItemNotFound
 	}
 
-	existingItem.Update(*updated)
+	existingItem.Update(updated)
 
 	// Persiste as alterações
 	if err := s.itemRepo.Update(ctx, existingItem); err != nil {

@@ -3,7 +3,7 @@ package handlers
 import (
 	"github.com/adrianjpsantos/rental-api/internal/application"
 	"github.com/adrianjpsantos/rental-api/internal/domain/item"
-	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/handler_helpers"
+	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/request"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -13,13 +13,11 @@ type ItemHandler struct {
 
 func (h *ItemHandler) CreateItem(c fiber.Ctx) error {
 
-	var req item.ReqCreate
+	newItem, err := request.ParseCreateItemInput(c)
 
-	if err := c.Bind().Body(&req); err != nil {
+	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
-
-	newItem := req.NewItem
 
 	createItem, err := h.service.Register(c.Context(), newItem)
 
@@ -38,7 +36,7 @@ func (h *ItemHandler) DeleteItem(c fiber.Ctx) error {
 }
 
 func (h *ItemHandler) GetItemByID(c fiber.Ctx) error {
-	reqId, err := handler_helpers.ParseUUIDParam(c, "item_id")
+	reqId, err := request.ParseUUIDParam(c, "item_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
@@ -56,7 +54,7 @@ func (h *ItemHandler) GetItemByID(c fiber.Ctx) error {
 }
 
 func (h *ItemHandler) ListItems(c fiber.Ctx) error {
-	filters, err := handler_helpers.ParseItemFilters(c)
+	filters, err := request.ParseItemFilterInput(c)
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
@@ -72,17 +70,17 @@ func (h *ItemHandler) ListItems(c fiber.Ctx) error {
 }
 
 func (h *ItemHandler) UpdateItem(c fiber.Ctx) error {
-	reqId, err := handler_helpers.ParseUUIDParam(c, "item_id")
+	reqId, err := request.ParseUUIDParam(c, "item_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	var req item.ReqUpdate
-	if err := c.Bind().Body(&req); err != nil {
+	toUpdate, err := request.ParseUpdateItemInput(c)
+	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
 
-	updatedItem, err := h.service.Update(c.Context(), reqId, &req.ToUpdate)
+	updatedItem, err := h.service.Update(c.Context(), reqId, toUpdate)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())

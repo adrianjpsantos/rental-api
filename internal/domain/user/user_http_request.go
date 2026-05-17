@@ -1,16 +1,16 @@
 package user
 
-type ReqByEmail struct {
+type RequestGetByEmailInput struct {
 	Email string `json:"email"`
 }
 
-type ReqByCPF struct {
+type RequestGetByCpfInput struct {
 	Cpf string `json:"cpf"`
 }
 
-type ReqUpdate struct {
+type RequestUpdateUserInput struct {
 	ToUpdate UserUpdate `json:"to_update"`
 }
-type ReqCreate struct {
+type RequestCreateUserInput struct {
 	NewUser UserCreateInput `json:"new_user"`
 }

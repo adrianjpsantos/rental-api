@@ -1,10 +1,10 @@
 package review
 
-type ReqCreate struct {
+type RequestCreateReviewInput struct {
 	NewReview Review `json:"new_review"`
 }
 
-type ReqUpdate struct {
-	Id       string `json:"id"`
+type RequestUpdateReviewInput struct {
+	ReviewID string `json:"review_id"`
 	ToUpdate Review `json:"to_update"`
 }

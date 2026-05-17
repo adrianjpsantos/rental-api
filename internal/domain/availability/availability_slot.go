@@ -22,16 +22,11 @@ const (
 	OwnerBlock  Reason = "owner_block"
 )
 
-type SlotDates struct {
-	StartDate time.Time
-	EndDate   time.Time
-}
-
 type AvailabilityFilter struct {
-	ItemID uuid.UUID
-	Dates  SlotDates
-	Type   *AvailabilityType
-	Reason *Reason
+	ItemID             uuid.UUID
+	StartDate, EndDate time.Time
+	Type               *AvailabilityType
+	Reason             *Reason
 }
 
 type AvailabilitySlot struct {

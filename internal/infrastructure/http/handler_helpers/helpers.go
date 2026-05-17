@@ -8,11 +8,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func ParseUUIDParam(c fiber.Ctx, key string) (uuid.UUID, error) {
-	id := c.Params(key)
-	return uuid.Parse(id)
-}
-
 func ParseRentalStatusQuery(c fiber.Ctx) (*rental.Status, error) {
 	q := c.Query("status")
 
@@ -31,22 +26,4 @@ func ParseReviewTypeQuery(c fiber.Ctx) (*review.ReviewType, error) {
 	}
 
 	return review.ParseReviewType(q)
-}
-
-func ParseItemFilters(c fiber.Ctx) (item.ItemFilter, error) {
-	var req item.ReqListByFilter
-	if err := c.Bind().Body(&req); err != nil {
-		return item.ItemFilter{}, err
-	}
-
-	return req.Filter, nil
-}
-
-func ParseCreateRental(c fiber.Ctx) (rental.Rental, error) {
-	var req rental.ReqCreate
-	if err := c.Bind().Body(&req); err != nil {
-		return rental.Rental{}, err
-	}
-
-	return req.NewRental, nil
 }

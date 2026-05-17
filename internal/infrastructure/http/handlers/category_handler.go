@@ -3,7 +3,8 @@ package handlers
 import (
 	"github.com/adrianjpsantos/rental-api/internal/application"
 	"github.com/adrianjpsantos/rental-api/internal/domain/category"
-	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/handler_helpers"
+	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/request"
+
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -12,7 +13,7 @@ type CategoryHandler struct {
 }
 
 func (h *CategoryHandler) CategoryExists(c fiber.Ctx) error {
-	categoryName, err := handler_helpers.ParseExistsCategory(c)
+	categoryName, err := request.ParseExistsCategory(c)
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
@@ -28,7 +29,7 @@ func (h *CategoryHandler) CategoryExists(c fiber.Ctx) error {
 }
 
 func (h *CategoryHandler) CreateCategory(c fiber.Ctx) error {
-	newCat, err := handler_helpers.ParseCreateCategory(c)
+	newCat, err := request.ParseCategoryCreateInput(c)
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
@@ -43,7 +44,7 @@ func (h *CategoryHandler) CreateCategory(c fiber.Ctx) error {
 }
 
 func (h *CategoryHandler) DeleteCategory(c fiber.Ctx) error {
-	categoryId, err := handler_helpers.ParseUUIDParam(c, "category_id")
+	categoryId, err := request.ParseUUIDParam(c, "category_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
@@ -59,7 +60,7 @@ func (h *CategoryHandler) DeleteCategory(c fiber.Ctx) error {
 }
 
 func (h *CategoryHandler) GetCategoryByID(c fiber.Ctx) error {
-	categoryId, err := handler_helpers.ParseUUIDParam(c, "category_id")
+	categoryId, err := request.ParseUUIDParam(c, "category_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
@@ -88,12 +89,12 @@ func (h *CategoryHandler) ListCategories(c fiber.Ctx) error {
 }
 
 func (h *CategoryHandler) UpdateCategory(c fiber.Ctx) error {
-	categoryId, err := handler_helpers.ParseUUIDParam(c, "category_id")
+	categoryId, err := request.ParseUUIDParam(c, "category_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	toUpdateCat, err := handler_helpers.ParseUpdateCategory(c)
+	toUpdateCat, err := request.ParseCategoryUpdate(c)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
