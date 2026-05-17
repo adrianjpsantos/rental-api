@@ -95,7 +95,7 @@ func (h *RentalHandler) Cancel(c fiber.Ctx) error {
 	}
 
 	return ResponseSuccess(c, fiber.Map{
-		"canceled_id": canceledRental.Id, // listagem de rentals do usuário como locador
+		"canceled_id": canceledRental.Id,
 	},
 	)
 }
