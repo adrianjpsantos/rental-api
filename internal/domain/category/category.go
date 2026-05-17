@@ -29,13 +29,20 @@ type CategoryUpdate struct {
 	IsActive    bool
 }
 
-func NewCategory(name, description, icon string, position int) (*Category, error) {
+type CategoryCreateInput struct {
+	Name        string `json:"name" validate:"required"`
+	Description string `json:"description" validate:"required"`
+	Icon        string `json:"icon" validate:"required"`
+	Position    int    `json:"position" validate:"required"`
+}
+
+func NewCategory(newCat CategoryCreateInput) (*Category, error) {
 	category := &Category{
 		ID:          uuid.New(),
-		Name:        strings.TrimSpace(name),
-		Description: strings.TrimSpace(description),
-		Icon:        strings.TrimSpace(icon),
-		Position:    position,
+		Name:        strings.TrimSpace(newCat.Name),
+		Description: strings.TrimSpace(newCat.Description),
+		Icon:        strings.TrimSpace(newCat.Icon),
+		Position:    newCat.Position,
 		IsActive:    true,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),

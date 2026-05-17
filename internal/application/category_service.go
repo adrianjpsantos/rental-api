@@ -17,9 +17,9 @@ func NewCategoryService(categoryRepo category.InterfaceCategoryRepository) *Cate
 	}
 }
 
-func (s *CategoryService) Register(ctx context.Context, name, description, icon string, position int, isActive bool) (*category.Category, error) {
+func (s *CategoryService) Register(ctx context.Context, newCat category.CategoryCreateInput) (*category.Category, error) {
 
-	exists, err := s.categoryRepo.Exists(ctx, name)
+	exists, err := s.categoryRepo.Exists(ctx, newCat.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +28,7 @@ func (s *CategoryService) Register(ctx context.Context, name, description, icon 
 	}
 
 	// Cria a entidade usando o construtor do domínio
-	NewCategory, err := category.NewCategory(name, description, icon, position)
+	NewCategory, err := category.NewCategory(newCat)
 	if err != nil {
 		return nil, err
 	}
@@ -90,4 +90,8 @@ func (s *CategoryService) Delete(ctx context.Context, slotID uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (s *CategoryService) CategoryExists(ctx context.Context, name string) (bool, error) {
+	return s.categoryRepo.Exists(ctx, name)
 }
