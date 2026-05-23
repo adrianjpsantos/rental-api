@@ -14,6 +14,15 @@ type AuthService struct {
 	TokenService token.Service
 }
 
+func (a *AuthService) RefreshAccessToken(ctx context.Context, refreshToken string) (string, error) {
+	refreshTokenClaims, err := a.TokenService.ValidateRefreshToken(refreshToken)
+	if err != nil {
+		return "", err
+	}
+
+	return a.TokenService.GenerateAccessToken(refreshTokenClaims.Payload())
+}
+
 func (a *AuthService) Logout(ctx context.Context, userID string) error {
 	panic("unimplemented")
 }
@@ -44,13 +53,13 @@ func (a *AuthService) Authenticate(
 		UserID: userForAuth.UserID,
 	}
 
-	accessToken, err := a.TokenService.GenerateAccessToken(ctx, payload)
+	accessToken, err := a.TokenService.GenerateAccessToken(payload)
 
 	if err != nil {
 		return emptyOutput, err
 	}
 
-	refreshToken, err := a.TokenService.GenerateRefreshToken(ctx, payload)
+	refreshToken, err := a.TokenService.GenerateRefreshToken(payload)
 
 	if err != nil {
 		return emptyOutput, err

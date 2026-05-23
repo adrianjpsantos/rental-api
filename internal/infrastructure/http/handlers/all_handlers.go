@@ -14,6 +14,7 @@ type AllHandlers struct {
 	ItemHandler         *ItemHandler
 	AvailabilityHandler *AvailabilityHandler
 	CategoryHandler     *CategoryHandler
+	AuthHandler         *AuthHandler
 }
 
 func NewAllHandlers(services *application.AllServices) *AllHandlers {
@@ -41,6 +42,8 @@ func NewAllHandlers(services *application.AllServices) *AllHandlers {
 		services.CategoryService,
 	)
 
+	authHandler := NewAuthHandler(services.AuthService)
+
 	return &AllHandlers{
 		UserHandler:         userHandler,
 		ReviewHandler:       reviewHandler,
@@ -48,6 +51,7 @@ func NewAllHandlers(services *application.AllServices) *AllHandlers {
 		ItemHandler:         itemHandler,
 		AvailabilityHandler: availabilityHandler,
 		CategoryHandler:     categoryHandler,
+		AuthHandler:         authHandler,
 	}
 }
 

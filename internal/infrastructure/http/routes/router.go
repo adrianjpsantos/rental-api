@@ -7,6 +7,8 @@ import (
 	"github.com/adrianjpsantos/rental-api/internal/application"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/handlers"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/repositories"
+	"github.com/adrianjpsantos/rental-api/internal/pkg/middleware/authentication"
+
 	swaggo "github.com/gofiber/contrib/v3/swaggo"
 	"github.com/gofiber/fiber/v3"
 )
@@ -14,21 +16,66 @@ import (
 func SetupRouter(db *sql.DB) *fiber.App {
 	app := fiber.New()
 
-	//Repositories, Services e Handlers
 	repositories := repositories.NewAllRepositories(db)
 	services := application.NewAllServices(repositories)
 	apiHandlers := handlers.NewAllHandlers(services)
 
+	SetupSwagger(app)
+
 	api := app.Group("/api")
+
 	api.Get("/health", handlers.GetHealth)
 
-	SetupSwagger(app)
-	SetupUserRoutes(api, apiHandlers.UserHandler)
-	SetupReviewRoutes(api, apiHandlers.ReviewHandler)
-	SetupRentalRoutes(api, apiHandlers.RentalHandler)
-	SetupItemRoutes(api, apiHandlers.ItemHandler)
-	SetupAvailabilityRoutes(api, apiHandlers.AvailabilityHandler)
-	SetupCategoryRoutes(api, apiHandlers.CategoryHandler)
+	public := api.Group("/")
+
+	private := api.Group(
+		"/",
+		authentication.AuthMiddleware(
+			services.TokenService,
+		),
+	)
+
+	authGroup := public.Group("/auth")
+
+	userGroup := private.Group("/users")
+	reviewGroup := private.Group("/reviews")
+	rentalGroup := private.Group("/rentals")
+	itemGroup := private.Group("/items")
+	availabilityGroup := private.Group("/availability")
+	categoryGroup := private.Group("/categories")
+
+	SetupAuthRoutes(authGroup, apiHandlers.AuthHandler)
+
+	SetupUserRoutes(userGroup, apiHandlers.UserHandler)
+
+	SetupReviewRoutes(
+		reviewGroup,
+		userGroup,
+		rentalGroup,
+		apiHandlers.ReviewHandler,
+	)
+
+	SetupRentalRoutes(
+		rentalGroup,
+		userGroup,
+		apiHandlers.RentalHandler,
+	)
+
+	SetupItemRoutes(
+		itemGroup,
+		apiHandlers.ItemHandler,
+	)
+
+	SetupAvailabilityRoutes(
+		availabilityGroup,
+		itemGroup,
+		apiHandlers.AvailabilityHandler,
+	)
+
+	SetupCategoryRoutes(
+		categoryGroup,
+		apiHandlers.CategoryHandler,
+	)
 
 	return app
 }
@@ -36,7 +83,6 @@ func SetupRouter(db *sql.DB) *fiber.App {
 func SetupSwagger(app *fiber.App) {
 	app.Get("/swagger/*", swaggo.HandlerDefault)
 
-	// Customize the UI by passing a Config
 	app.Get("/docs/*", swaggo.New(swaggo.Config{
 		URL:               "http://example.com/doc.json",
 		DeepLinking:       false,
@@ -45,70 +91,93 @@ func SetupSwagger(app *fiber.App) {
 	}))
 }
 
-func SetupUserRoutes(router fiber.Router, handler *handlers.UserHandler) {
-	//Basic CRUD
-	router.Post("/users", handler.Create)
-	router.Get("/users/:user_id", handler.GetByID)
-	router.Put("/users/:user_id", handler.Update)
-	router.Delete("/users/:user_id", handler.Delete)
-
-	//Buscas
-	router.Post("/users/by-email", handler.GetByEmail) // ?email=exemplo@exemplo.com
-
-	//Exists
-	router.Post("/users/exists-by-email", handler.ExistsByEmail) // ?email=exemplo@exemplo.com
-	router.Post("/users/exists-by-cpf", handler.ExistsByCPF)     // ?cpf=1234568912
+func SetupAuthRoutes(
+	router fiber.Router,
+	handler *handlers.AuthHandler,
+) {
+	router.Post("/login", handler.Authenticate)
+	router.Post("/refresh", handler.Refresh)
+	router.Post("/logout", handler.Logout)
 }
 
-func SetupReviewRoutes(router fiber.Router, handler *handlers.ReviewHandler) {
-	router.Post("/reviews", handler.Create)
-	router.Get("/reviews/:review_id", handler.GetByID)
+func SetupUserRoutes(
+	router fiber.Router,
+	handler *handlers.UserHandler,
+) {
+	router.Post("/", handler.Create)
+	router.Get("/:user_id", handler.GetByID)
+	router.Put("/:user_id", handler.Update)
+	router.Delete("/:user_id", handler.Delete)
 
-	//Other Reads
-	router.Get("/rentals/:rental_id/reviews", handler.GetByRentalID)
+	router.Get("/by-email", handler.GetByEmail)
 
-	router.Get("/users/:user_id/reviews/received", handler.GetReceivedReviews)
-	router.Get("/users/:user_id/reviews/given", handler.GetGivenReviews)
-
-	router.Get("/users/:user_id/reviews", handler.GetUserReviews)
+	router.Get("/exists-by-email", handler.ExistsByEmail)
+	router.Get("/exists-by-cpf", handler.ExistsByCPF)
 }
 
-func SetupRentalRoutes(router fiber.Router, handler *handlers.RentalHandler) {
-	router.Post("/rentals", handler.Create)
-	router.Get("/rentals/:rental_id", handler.GetByID)
-	router.Put("/rentals/:rental_id/status", handler.UpdateStatus)
-	router.Put("/rentals/:rental_id/cancel", handler.Cancel)
+func SetupReviewRoutes(
+	reviewRouter fiber.Router,
+	userRouter fiber.Router,
+	rentalRouter fiber.Router,
+	handler *handlers.ReviewHandler,
+) {
+	reviewRouter.Post("/", handler.Create)
+	reviewRouter.Get("/:review_id", handler.GetByID)
 
-	//Other Reads
-	router.Get("/users/:user_id/rentals", handler.GetAllUserRentals)
-	router.Get("/users/:user_id/rentals/lessee", handler.GetUserRentalsAsLessee)
-	router.Get("/users/:user_id/rentals/lessor", handler.GetUserRentalsAsLessor)
+	rentalRouter.Get("/:rental_id/reviews", handler.GetByRentalID)
+
+	userRouter.Get("/:user_id/reviews", handler.GetUserReviews)
+	userRouter.Get("/:user_id/reviews/received", handler.GetReceivedReviews)
+	userRouter.Get("/:user_id/reviews/given", handler.GetGivenReviews)
 }
 
-func SetupItemRoutes(router fiber.Router, handler *handlers.ItemHandler) {
-	router.Post("/items", handler.CreateItem)
-	router.Get("/items/:item_id", handler.GetItemByID)
-	router.Put("/items/:item_id", handler.UpdateItem)
-	router.Delete("/items/:item_id", handler.DeleteItem)
+func SetupRentalRoutes(
+	rentalRouter fiber.Router,
+	userRouter fiber.Router,
+	handler *handlers.RentalHandler,
+) {
+	rentalRouter.Post("/", handler.Create)
+	rentalRouter.Get("/:rental_id", handler.GetByID)
+	rentalRouter.Put("/:rental_id/status", handler.UpdateStatus)
+	rentalRouter.Put("/:rental_id/cancel", handler.Cancel)
 
-	//Other Reads
-	router.Get("/items", handler.ListItems) // filtros de busca no body
+	userRouter.Get("/:user_id/rentals", handler.GetAllUserRentals)
+	userRouter.Get("/:user_id/rentals/lessee", handler.GetUserRentalsAsLessee)
+	userRouter.Get("/:user_id/rentals/lessor", handler.GetUserRentalsAsLessor)
 }
 
-func SetupAvailabilityRoutes(router fiber.Router, handler *handlers.AvailabilityHandler) {
-	router.Post("/availability", handler.Create)
-	router.Get("/availability/:availability_id", handler.GetByID)
-	router.Delete("/availability/:availability_id", handler.Delete)
+func SetupItemRoutes(
+	router fiber.Router,
+	handler *handlers.ItemHandler,
+) {
+	router.Post("/", handler.CreateItem)
+	router.Get("/:item_id", handler.GetItemByID)
+	router.Put("/:item_id", handler.UpdateItem)
+	router.Delete("/:item_id", handler.DeleteItem)
 
-	//Other Reads
-	router.Get("/items/:item_id/availability", handler.GetByItemID)
-	router.Post("/items/:item_id/check-availability", handler.CheckAvailability)
+	router.Get("/", handler.ListItems)
 }
 
-func SetupCategoryRoutes(router fiber.Router, handler *handlers.CategoryHandler) {
-	router.Post("/categories", handler.CreateCategory)
-	router.Get("/categories", handler.ListCategories)
-	router.Get("/categories/:category_id", handler.GetCategoryByID)
-	router.Put("/categories/:category_id", handler.UpdateCategory)
-	router.Delete("/categories/:category_id", handler.DeleteCategory)
+func SetupAvailabilityRoutes(
+	availabilityRouter fiber.Router,
+	itemRouter fiber.Router,
+	handler *handlers.AvailabilityHandler,
+) {
+	availabilityRouter.Post("/", handler.Create)
+	availabilityRouter.Get("/:availability_id", handler.GetByID)
+	availabilityRouter.Delete("/:availability_id", handler.Delete)
+
+	itemRouter.Get("/:item_id/availability", handler.GetByItemID)
+	itemRouter.Post("/:item_id/check-availability", handler.CheckAvailability)
+}
+
+func SetupCategoryRoutes(
+	router fiber.Router,
+	handler *handlers.CategoryHandler,
+) {
+	router.Post("/", handler.CreateCategory)
+	router.Get("/", handler.ListCategories)
+	router.Get("/:category_id", handler.GetCategoryByID)
+	router.Put("/:category_id", handler.UpdateCategory)
+	router.Delete("/:category_id", handler.DeleteCategory)
 }

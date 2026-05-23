@@ -44,3 +44,8 @@ func (h *AuthHandler) Logout(c fiber.Ctx) error {
 		"message": "Logout bem-sucedido",
 	})
 }
+
+func (h *AuthHandler) Refresh(c fiber.Ctx) error {
+
+	return nil
+}
