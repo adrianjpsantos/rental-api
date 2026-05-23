@@ -1,7 +1,6 @@
 package application
 
 import (
-	"context"
 	"time"
 
 	"github.com/adrianjpsantos/rental-api/internal/domain/authenticate"
@@ -14,14 +13,14 @@ type TokenService struct {
 	cfg *config.Config
 }
 
-func (s *TokenService) GenerateAccessToken(ctx context.Context, payload authenticate.AuthenticatePayload) (string, error) {
+func (s *TokenService) GenerateAccessToken(payload authenticate.AuthenticatePayload) (string, error) {
 
 	duration, err := time.ParseDuration(s.cfg.JWT.AccessExpires)
 	if err != nil {
 		return "", err
 	}
 
-	claims := token.TokenClaims{
+	claims := token.Claims{
 		AuthenticatePayload: payload,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(
@@ -37,13 +36,13 @@ func (s *TokenService) GenerateAccessToken(ctx context.Context, payload authenti
 	return generateToken.SignedString([]byte(secretKey))
 }
 
-func (s *TokenService) GenerateRefreshToken(ctx context.Context, payload authenticate.AuthenticatePayload) (string, error) {
+func (s *TokenService) GenerateRefreshToken(payload authenticate.AuthenticatePayload) (string, error) {
 	duration, err := time.ParseDuration(s.cfg.JWT.RefreshExpires)
 	if err != nil {
 		return "", err
 	}
 
-	claims := token.TokenClaims{
+	claims := token.Claims{
 		AuthenticatePayload: payload,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(
@@ -59,37 +58,28 @@ func (s *TokenService) GenerateRefreshToken(ctx context.Context, payload authent
 	return generateToken.SignedString([]byte(secretKey))
 }
 
-func (s *TokenService) RefreshAccessToken(ctx context.Context, refreshToken string) (string, error) {
-	refreshTokenClaims, err := s.ValidateRefreshToken(ctx, refreshToken)
-	if err != nil {
-		return "", err
-	}
-
-	return s.GenerateAccessToken(ctx, refreshTokenClaims.Payload())
-}
-
-func (s *TokenService) ValidateAccessToken(ctx context.Context, accessToken string) (token.TokenClaims, error) {
-	validToken, err := jwt.ParseWithClaims(accessToken, token.TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+func (s *TokenService) ValidateAccessToken(accessToken string) (token.Claims, error) {
+	validToken, err := jwt.ParseWithClaims(accessToken, token.Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(s.cfg.JWT.AccessSecret), nil
 	})
 
 	if err != nil {
-		return token.TokenClaims{}, err
+		return token.Claims{}, err
 	}
 
-	return *validToken.Claims.(*token.TokenClaims), nil
+	return *validToken.Claims.(*token.Claims), nil
 }
 
-func (s *TokenService) ValidateRefreshToken(ctx context.Context, refreshToken string) (token.TokenClaims, error) {
-	validToken, err := jwt.ParseWithClaims(refreshToken, token.TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+func (s *TokenService) ValidateRefreshToken(refreshToken string) (token.Claims, error) {
+	validToken, err := jwt.ParseWithClaims(refreshToken, token.Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(s.cfg.JWT.RefreshSecret), nil
 	})
 
 	if err != nil {
-		return token.TokenClaims{}, err
+		return token.Claims{}, err
 	}
 
-	return *validToken.Claims.(*token.TokenClaims), nil
+	return *validToken.Claims.(*token.Claims), nil
 }
 
 func NewTokenService() token.Service {

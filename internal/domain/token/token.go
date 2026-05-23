@@ -5,12 +5,12 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type TokenClaims struct {
+type Claims struct {
 	OIDToken *string `json:"oid_token,omitempty"`
 	authenticate.AuthenticatePayload
 	jwt.RegisteredClaims
 }
 
-func (t *TokenClaims) Payload() authenticate.AuthenticatePayload {
+func (t *Claims) Payload() authenticate.AuthenticatePayload {
 	return t.AuthenticatePayload
 }
