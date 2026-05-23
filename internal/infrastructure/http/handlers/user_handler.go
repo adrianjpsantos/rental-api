@@ -1,9 +1,8 @@
 package handlers
 
 import (
-	"github.com/adrianjpsantos/rental-api/internal/application"
 	"github.com/adrianjpsantos/rental-api/internal/domain/user"
-	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/handler_helpers"
+	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/parses"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -14,39 +13,39 @@ type Response struct {
 }
 
 type UserHandler struct {
-	service *application.UserService
+	service user.Service
 }
 
-func NewUserHandler(service *application.UserService) *UserHandler {
+func NewUserHandler(service user.Service) *UserHandler {
 	return &UserHandler{service: service}
 }
 
 // CRUD Básico
 func (h *UserHandler) Create(c fiber.Ctx) error {
-	newUser, err := handler_helpers.ParseCreateUser(c)
+	newUser, err := parses.ParseBody[user.UserCreateInput](c)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
 
-	createdUser, err := h.service.Register(c.Context(), newUser)
+	err = h.service.Create(c.Context(), newUser)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
 	return ResponseSuccess(c, fiber.Map{
-		"created_user_id": createdUser.Id,
+		"message": "Created User",
 	})
 }
 
 func (h *UserHandler) GetByID(c fiber.Ctx) error {
-	userId, err := handler_helpers.ParseUUIDParam(c, "user_id")
+	userId, err := parses.ParseUUIDParam(c, "user_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	existingUser, err := h.service.GetByID(c.Context(), userId)
+	existingUser, err := h.service.GetByID(c.Context(), *userId)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
@@ -59,36 +58,36 @@ func (h *UserHandler) GetByID(c fiber.Ctx) error {
 }
 func (h *UserHandler) Update(c fiber.Ctx) error {
 
-	userId, err := handler_helpers.ParseUUIDParam(c, "user_id")
+	userId, err := parses.ParseUUIDParam(c, "user_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	toUpdate, err := handler_helpers.ParseUpdateUser(c)
+	input, err := parses.ParseBody[user.UserUpdateInput](c)
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
 
-	updatedUser, err := h.service.UpdateProfile(c.Context(), userId, toUpdate)
+	err = h.service.Update(c.Context(), *userId, input)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
 	return ResponseSuccess(c, fiber.Map{
-		"updated_user": updatedUser,
+		"message": "updated user",
 	},
 	)
 
 }
 func (h *UserHandler) Delete(c fiber.Ctx) error {
 
-	userId, err := handler_helpers.ParseUUIDParam(c, "user_id")
+	userId, err := parses.ParseUUIDParam(c, "user_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	err = h.service.Delete(c.Context(), userId)
+	err = h.service.Delete(c.Context(), *userId)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
@@ -102,13 +101,13 @@ func (h *UserHandler) Delete(c fiber.Ctx) error {
 
 // Buscas
 func (h *UserHandler) GetByEmail(c fiber.Ctx) error {
-	var req user.ReqByEmail
+	email := parses.ParseStringQuery(c, "email")
 
-	if err := c.Bind().Body(&req); err != nil {
-		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
+	if !user.IsValidEmail(*email) {
+		return ResponseError(c, fiber.StatusBadRequest, user.ErrInvalidEmail.Error())
 	}
 
-	existingUser, err := h.service.GetByEmail(c.Context(), req.Email)
+	existingUser, err := h.service.GetByEmail(c.Context(), *email)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
@@ -122,13 +121,13 @@ func (h *UserHandler) GetByEmail(c fiber.Ctx) error {
 
 // Exists
 func (h *UserHandler) ExistsByEmail(c fiber.Ctx) error {
-	var req user.ReqByEmail
+	email := parses.ParseStringQuery(c, "email")
 
-	if err := c.Bind().Body(&req); err != nil {
-		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
+	if !user.IsValidEmail(*email) {
+		return ResponseError(c, fiber.StatusBadRequest, user.ErrInvalidEmail.Error())
 	}
 
-	exists, err := h.service.ExistsByEmail(c.Context(), req.Email)
+	exists, err := h.service.ExistsByEmail(c.Context(), *email)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
@@ -141,13 +140,13 @@ func (h *UserHandler) ExistsByEmail(c fiber.Ctx) error {
 }
 
 func (h *UserHandler) ExistsByCPF(c fiber.Ctx) error {
-	var req user.ReqByCPF
+	cpf := parses.ParseStringQuery(c, "cpf")
 
-	if err := c.Bind().Body(&req); err != nil {
-		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
+	if !user.IsValidCPF(*cpf) {
+		return ResponseError(c, fiber.StatusBadRequest, user.ErrInvalidCPF.Error())
 	}
 
-	exists, err := h.service.ExistsByCPF(c.Context(), req.Cpf)
+	exists, err := h.service.ExistsByCPF(c.Context(), *cpf)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())

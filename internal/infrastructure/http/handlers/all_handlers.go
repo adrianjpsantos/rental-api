@@ -3,9 +3,6 @@ package handlers
 import (
 	"github.com/adrianjpsantos/rental-api/internal/application"
 	"github.com/adrianjpsantos/rental-api/internal/domain/authenticate"
-	"github.com/adrianjpsantos/rental-api/internal/domain/availability"
-	"github.com/adrianjpsantos/rental-api/internal/domain/category"
-	"github.com/adrianjpsantos/rental-api/internal/domain/item"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/config"
 	"github.com/gofiber/fiber/v3"
 )
@@ -14,9 +11,9 @@ type AllHandlers struct {
 	UserHandler         *UserHandler
 	ReviewHandler       *ReviewHandler
 	RentalHandler       *RentalHandler
-	ItemHandler         item.InterfaceItemHandler
-	AvailabilityHandler availability.InterfaceAvailabilityHandler
-	CategoryHandler     category.InterfaceCategoryHandler
+	ItemHandler         *ItemHandler
+	AvailabilityHandler *AvailabilityHandler
+	CategoryHandler     *CategoryHandler
 }
 
 func NewAllHandlers(services *application.AllServices) *AllHandlers {

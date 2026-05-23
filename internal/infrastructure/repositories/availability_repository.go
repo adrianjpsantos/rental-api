@@ -13,12 +13,12 @@ type AvailabilityRepository struct {
 	db *sql.DB
 }
 
-func NewAvailabilityRepository(db *sql.DB) availability.InterfaceAvailabilityRepository {
+func NewAvailabilityRepository(db *sql.DB) availability.Repository {
 	return &AvailabilityRepository{db: db}
 }
 
 // Create
-func (r *AvailabilityRepository) Create(ctx context.Context, slot *availability.AvailabilitySlot) error {
+func (r *AvailabilityRepository) Create(ctx context.Context, slot availability.AvailabilitySlot) error {
 	query := `
 		INSERT INTO availability_slots (
 			id, item_id, start_date, end_date,

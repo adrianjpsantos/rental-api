@@ -12,12 +12,12 @@ import (
 )
 
 type AllRepositories struct {
-	UserRepo         user.InterfaceUserRepository
-	ReviewRepo       review.InterfaceReviewRepository
-	RentalRepo       rental.InterfaceRentalRepository
-	ItemRepo         item.InterfaceItemRepository
-	AvailabilityRepo availability.InterfaceAvailabilityRepository
-	CategoryRepo     category.InterfaceCategoryRepository
+	UserRepo         user.Repository
+	ReviewRepo       review.Repository
+	RentalRepo       rental.Repository
+	ItemRepo         item.Repository
+	AvailabilityRepo availability.Repository
+	CategoryRepo     category.Repository
 }
 
 func NewAllRepositories(db *sql.DB) *AllRepositories {

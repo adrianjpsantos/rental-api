@@ -10,8 +10,8 @@ import (
 )
 
 type AuthService struct {
-	UserRepo     user.InterfaceUserRepository
-	TokenService token.InterfaceTokenService
+	UserService  user.Service
+	TokenService token.Service
 }
 
 func (a *AuthService) Logout(ctx context.Context, userID string) error {
@@ -24,7 +24,7 @@ func (a *AuthService) Authenticate(
 ) (authenticate.AuthenticateOutput, error) {
 	emptyOutput := authenticate.AuthenticateOutput{}
 
-	userForAuth, err := a.UserRepo.
+	userForAuth, err := a.UserService.
 		GetUserForAuthentication(ctx, input.Email)
 
 	if err != nil {
@@ -62,9 +62,9 @@ func (a *AuthService) Authenticate(
 	}, nil
 }
 
-func NewAuthService(userRepo user.InterfaceUserRepository, tokenService token.InterfaceTokenService) authenticate.InterfaceAuthenticateService {
+func NewAuthService(userService user.Service, tokenService token.Service) authenticate.Service {
 	return &AuthService{
-		UserRepo:     userRepo,
+		UserService:  userService,
 		TokenService: tokenService,
 	}
 }

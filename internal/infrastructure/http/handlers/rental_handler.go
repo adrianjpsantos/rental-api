@@ -1,48 +1,47 @@
 package handlers
 
 import (
-	"github.com/adrianjpsantos/rental-api/internal/application"
 	"github.com/adrianjpsantos/rental-api/internal/domain/rental"
-	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/handler_helpers"
+	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/parses"
 	"github.com/gofiber/fiber/v3"
 )
 
 type RentalHandler struct {
-	service *application.RentalService
+	service rental.Service
 }
 
-func NewRentalHandler(service *application.RentalService) *RentalHandler {
+func NewRentalHandler(service rental.Service) *RentalHandler {
 	return &RentalHandler{service: service}
 }
 
 func (h *RentalHandler) Create(c fiber.Ctx) error {
 
-	newRental, err := handler_helpers.ParseCreateRental(c)
+	newRental, err := parses.ParseBody[rental.RentalCreateInput](c)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
 
-	createdRental, err := h.service.Register(c.Context(), newRental.ItemID, newRental.LesseeID, newRental.LessorID, newRental.StartDate, newRental.EndDate, newRental.TotalAmount, newRental.DeliveryMethod, newRental.Notes)
+	err = h.service.Create(c.Context(), newRental)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
 	return ResponseSuccess(c, fiber.Map{
-		"rental_id": createdRental.Id,
+		"message": "Rental Created",
 	},
 	)
 }
 
 // CRUD - READ
 func (h *RentalHandler) GetByID(c fiber.Ctx) error {
-	reqId, err := handler_helpers.ParseUUIDParam(c, "rental_id")
+	rentalId, err := parses.ParseUUIDParam(c, "rental_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	existingRental, err := h.service.GetByID(c.Context(), reqId)
+	existingRental, err := h.service.GetByID(c.Context(), *rentalId)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
@@ -55,58 +54,58 @@ func (h *RentalHandler) GetByID(c fiber.Ctx) error {
 }
 
 func (h *RentalHandler) UpdateStatus(c fiber.Ctx) error {
-	reqId, err := handler_helpers.ParseUUIDParam(c, "rental_id")
+	rentalId, err := parses.ParseUUIDParam(c, "rental_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	var req rental.ReqUpdateStatus
-	if err := c.Bind().Body(&req); err != nil {
+	newStatus, err := parses.ParseBody[rental.RentalStatus](c)
+	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
 
-	updatedRental, err := h.service.UpdateStatus(c.Context(), reqId, &req.NewStatus)
-
+	err = h.service.UpdateStatus(c.Context(), *rentalId, &newStatus)
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
 	return ResponseSuccess(c, fiber.Map{
-		"updated_rental_status": updatedRental.Status,
+		"message": "Updated Status",
 	},
 	)
 }
 
 func (h *RentalHandler) Cancel(c fiber.Ctx) error {
-	reqId, err := handler_helpers.ParseUUIDParam(c, "rental_id")
+	rentalId, err := parses.ParseUUIDParam(c, "rental_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	var req rental.ReqCancel
-	if err := c.Bind().Body(&req); err != nil {
+	cancellationReason, err := parses.ParseBody[string](c)
+	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
 
-	canceledRental, err := h.service.Cancel(c.Context(), reqId, req.CancellationReason)
+	err = h.service.Cancel(c.Context(), *rentalId, cancellationReason)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
 	return ResponseSuccess(c, fiber.Map{
-		"canceled_id": canceledRental.Id,
+		"message": "Canceled Rental",
 	},
 	)
 }
 
 func (h *RentalHandler) GetAllUserRentals(c fiber.Ctx) error {
-	reqId, err := handler_helpers.ParseUUIDParam(c, "user_id")
+	userId, err := parses.ParseUUIDParam(c, "user_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	rentalStatus, err := handler_helpers.ParseRentalStatusQuery(c)
+	statusQuery := parses.ParseStringQuery(c, "status")
+	rentalStatus, err := rental.ParseRentalStatus(*statusQuery)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Response{
 			Success: false,
@@ -114,7 +113,7 @@ func (h *RentalHandler) GetAllUserRentals(c fiber.Ctx) error {
 		})
 	}
 
-	existingRentals, err := h.service.GetAllUserRentals(c.Context(), reqId, rentalStatus)
+	existingRentals, err := h.service.GetAllUserRentals(c.Context(), *userId, rentalStatus)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
@@ -127,12 +126,13 @@ func (h *RentalHandler) GetAllUserRentals(c fiber.Ctx) error {
 }
 
 func (h *RentalHandler) GetUserRentalsAsLessor(c fiber.Ctx) error {
-	reqId, err := handler_helpers.ParseUUIDParam(c, "user_id")
+	userId, err := parses.ParseUUIDParam(c, "user_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	rentalStatus, err := handler_helpers.ParseRentalStatusQuery(c)
+	statusQuery := parses.ParseStringQuery(c, "status")
+	rentalStatus, err := rental.ParseRentalStatus(*statusQuery)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Response{
 			Success: false,
@@ -140,7 +140,7 @@ func (h *RentalHandler) GetUserRentalsAsLessor(c fiber.Ctx) error {
 		})
 	}
 
-	existingRentals, err := h.service.ListByLessor(c.Context(), reqId, rentalStatus)
+	existingRentals, err := h.service.ListByLessor(c.Context(), *userId, rentalStatus)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
@@ -153,12 +153,13 @@ func (h *RentalHandler) GetUserRentalsAsLessor(c fiber.Ctx) error {
 }
 
 func (h *RentalHandler) GetUserRentalsAsLessee(c fiber.Ctx) error {
-	reqId, err := handler_helpers.ParseUUIDParam(c, "user_id")
+	userId, err := parses.ParseUUIDParam(c, "user_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	rentalStatus, err := handler_helpers.ParseRentalStatusQuery(c)
+	statusQuery := parses.ParseStringQuery(c, "status")
+	rentalStatus, err := rental.ParseRentalStatus(*statusQuery)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Response{
 			Success: false,
@@ -166,7 +167,7 @@ func (h *RentalHandler) GetUserRentalsAsLessee(c fiber.Ctx) error {
 		})
 	}
 
-	existingRentals, err := h.service.ListByLessee(c.Context(), reqId, rentalStatus)
+	existingRentals, err := h.service.ListByLessee(c.Context(), *userId, rentalStatus)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())

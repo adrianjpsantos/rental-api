@@ -14,7 +14,7 @@ type ItemRepository struct {
 	db *sql.DB
 }
 
-func NewItemRepository(db *sql.DB) item.InterfaceItemRepository {
+func NewItemRepository(db *sql.DB) item.Repository {
 	return &ItemRepository{db: db}
 }
 
@@ -159,21 +159,21 @@ func (r *ItemRepository) ListByFilters(ctx context.Context, f item.ItemFilter) (
 		argPos++
 	}
 
-	if f.Location != "" {
+	if f.Location != nil {
 		query += fmt.Sprintf(" AND location ILIKE $%d", argPos)
-		args = append(args, "%"+f.Location+"%")
+		args = append(args, "%"+*f.Location+"%")
 		argPos++
 	}
 
 	query += " ORDER BY created_at DESC"
 
-	if f.Limit > 0 {
+	if f.Limit != nil && *f.Limit > 0 {
 		query += fmt.Sprintf(" LIMIT $%d", argPos)
 		args = append(args, f.Limit)
 		argPos++
 	}
 
-	if f.Offset > 0 {
+	if f.Offset != nil && *f.Offset > 0 {
 		query += fmt.Sprintf(" OFFSET $%d", argPos)
 		args = append(args, f.Offset)
 	}

@@ -12,12 +12,12 @@ type CategoryRepository struct {
 	db *sql.DB
 }
 
-func NewCategoryRepository(db *sql.DB) category.InterfaceCategoryRepository {
+func NewCategoryRepository(db *sql.DB) category.Repository {
 	return &CategoryRepository{db: db}
 }
 
 // Create
-func (r *CategoryRepository) Create(ctx context.Context, c *category.Category) error {
+func (r *CategoryRepository) Create(ctx context.Context, input category.Category) error {
 	query := `
 		INSERT INTO categories (
 			id, name, slug, description,
@@ -27,15 +27,15 @@ func (r *CategoryRepository) Create(ctx context.Context, c *category.Category) e
 	`
 
 	_, err := r.db.ExecContext(ctx, query,
-		c.ID,
-		c.Name,
-		c.Slug,
-		c.Description,
-		c.IsActive,
-		c.Icon,
-		c.Position,
-		c.CreatedAt,
-		c.UpdatedAt,
+		input.ID,
+		input.Name,
+		input.Slug,
+		input.Description,
+		input.IsActive,
+		input.Icon,
+		input.Position,
+		input.CreatedAt,
+		input.UpdatedAt,
 	)
 
 	return err
@@ -123,7 +123,7 @@ func (r *CategoryRepository) List(ctx context.Context) ([]*category.Category, er
 }
 
 // Update
-func (r *CategoryRepository) Update(ctx context.Context, c *category.Category) error {
+func (r *CategoryRepository) Update(ctx context.Context, update category.Category) error {
 	query := `
 		UPDATE categories SET
 			name = $1,
@@ -137,13 +137,13 @@ func (r *CategoryRepository) Update(ctx context.Context, c *category.Category) e
 	`
 
 	result, err := r.db.ExecContext(ctx, query,
-		c.Name,
-		c.Slug,
-		c.Description,
-		c.IsActive,
-		c.Icon,
-		c.Position,
-		c.ID,
+		update.Name,
+		update.Slug,
+		update.Description,
+		update.IsActive,
+		update.Icon,
+		update.Position,
+		update.ID,
 	)
 
 	if err != nil {

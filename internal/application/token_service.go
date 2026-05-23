@@ -92,7 +92,7 @@ func (s *TokenService) ValidateRefreshToken(ctx context.Context, refreshToken st
 	return *validToken.Claims.(*token.TokenClaims), nil
 }
 
-func NewTokenService() token.InterfaceTokenService {
+func NewTokenService() token.Service {
 	return &TokenService{
 		cfg: config.LoadConfig(),
 	}

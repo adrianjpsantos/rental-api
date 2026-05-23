@@ -9,41 +9,45 @@ import (
 )
 
 type RentalService struct {
-	rentalRepo rental.InterfaceRentalRepository
+	repository rental.Repository
 }
 
-func NewRentalService(rentalRepo rental.InterfaceRentalRepository) *RentalService {
+func (s *RentalService) ExistsOverlapping(ctx context.Context, itemID uuid.UUID, startDate time.Time, endDate time.Time) (bool, error) {
+	return s.repository.ExistsOverlapping(ctx, itemID, startDate, endDate)
+}
+
+func NewRentalService(repo rental.Repository) rental.Service {
 	return &RentalService{
-		rentalRepo: rentalRepo,
+		repository: repo,
 	}
 }
 
-func (s *RentalService) Register(ctx context.Context, itemID, lesseeID, lessorID uuid.UUID, startDate, endDate time.Time, totalAmount float64, deliveryMethod rental.DeliveryMethod, notes string) (*rental.Rental, error) {
+func (s *RentalService) Create(ctx context.Context, input rental.RentalCreateInput) error {
 
-	exists, err := s.rentalRepo.ExistsOverlapping(ctx, itemID, startDate, endDate)
+	exists, err := s.repository.ExistsOverlapping(ctx, input.ItemID, input.StartDate, input.EndDate)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if exists {
-		return nil, rental.ErrRentalAlreadyExists
+		return rental.ErrRentalAlreadyExists
 	}
 
-	// Cria a entidade usando o construtor do domínio
-	newRental, err := rental.NewRental(itemID, lesseeID, lessorID, startDate, endDate, totalAmount, deliveryMethod, notes)
+	newRental, err := rental.NewRental(input)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	// Persiste no banco
-	if err := s.rentalRepo.Create(ctx, newRental); err != nil {
-		return nil, err
+	err = s.repository.Create(ctx, *newRental)
+
+	if err != nil {
+		return err
 	}
 
-	return newRental, nil
+	return nil
 }
 
 func (s *RentalService) GetByID(ctx context.Context, id uuid.UUID) (*rental.Rental, error) {
-	existingRental, err := s.rentalRepo.GetByID(ctx, id)
+	existingRental, err := s.repository.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +57,8 @@ func (s *RentalService) GetByID(ctx context.Context, id uuid.UUID) (*rental.Rent
 	return existingRental, nil
 }
 
-func (s *RentalService) ListByLessee(ctx context.Context, lesseeID uuid.UUID, status *rental.Status) ([]*rental.Rental, error) {
-	listRental, err := s.rentalRepo.ListByLessee(ctx, lesseeID, status)
+func (s *RentalService) ListByLessee(ctx context.Context, lesseeID uuid.UUID, status *rental.RentalStatus) ([]*rental.Rental, error) {
+	listRental, err := s.repository.ListByLessee(ctx, lesseeID, status)
 	if err != nil {
 		return nil, err
 	}
@@ -62,8 +66,8 @@ func (s *RentalService) ListByLessee(ctx context.Context, lesseeID uuid.UUID, st
 	return listRental, nil
 }
 
-func (s *RentalService) ListByLessor(ctx context.Context, lessorID uuid.UUID, status *rental.Status) ([]*rental.Rental, error) {
-	listRental, err := s.rentalRepo.ListByLessor(ctx, lessorID, status)
+func (s *RentalService) ListByLessor(ctx context.Context, lessorID uuid.UUID, status *rental.RentalStatus) ([]*rental.Rental, error) {
+	listRental, err := s.repository.ListByLessor(ctx, lessorID, status)
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +75,8 @@ func (s *RentalService) ListByLessor(ctx context.Context, lessorID uuid.UUID, st
 	return listRental, nil
 }
 
-func (s *RentalService) GetAllUserRentals(ctx context.Context, lessorID uuid.UUID, status *rental.Status) ([]*rental.Rental, error) {
-	listRental, err := s.rentalRepo.ListByLessor(ctx, lessorID, status)
+func (s *RentalService) GetAllUserRentals(ctx context.Context, lessorID uuid.UUID, status *rental.RentalStatus) ([]*rental.Rental, error) {
+	listRental, err := s.repository.ListByLessor(ctx, lessorID, status)
 	if err != nil {
 		return nil, err
 	}
@@ -80,43 +84,43 @@ func (s *RentalService) GetAllUserRentals(ctx context.Context, lessorID uuid.UUI
 	return listRental, nil
 }
 
-func (s *RentalService) UpdateStatus(ctx context.Context, userID uuid.UUID, newStatus *rental.Status) (*rental.Rental, error) {
+func (s *RentalService) UpdateStatus(ctx context.Context, id uuid.UUID, status *rental.RentalStatus) error {
 
-	existingRental, err := s.rentalRepo.GetByID(ctx, userID)
+	existingRental, err := s.repository.GetByID(ctx, id)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if existingRental == nil {
-		return nil, rental.ErrRentalNotFound
+		return rental.ErrRentalNotFound
 	}
 
-	existingRental.UpdateStatus(*newStatus)
+	existingRental.UpdateStatus(*status)
 
-	// Persiste as alterações
-	if err := s.rentalRepo.Update(ctx, existingRental); err != nil {
-		return nil, err
+	err = s.repository.Update(ctx, *existingRental)
+	if err != nil {
+		return err
 	}
 
-	return existingRental, nil
+	return nil
 }
 
-func (s *RentalService) Cancel(ctx context.Context, userID uuid.UUID, cancellationReason string) (*rental.Rental, error) {
+func (s *RentalService) Cancel(ctx context.Context, id uuid.UUID, cancellationReason string) error {
 
-	existingRental, err := s.rentalRepo.GetByID(ctx, userID)
+	existingRental, err := s.repository.GetByID(ctx, id)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if existingRental == nil {
-		return nil, rental.ErrRentalNotFound
+		return rental.ErrRentalNotFound
 	}
 
 	existingRental.UpdateStatus(rental.Cancelled)
 	existingRental.CancellationReason = cancellationReason
 
-	// Persiste as alterações
-	if err := s.rentalRepo.Update(ctx, existingRental); err != nil {
-		return nil, err
+	err = s.repository.Update(ctx, *existingRental)
+	if err != nil {
+		return err
 	}
 
-	return existingRental, nil
+	return nil
 }

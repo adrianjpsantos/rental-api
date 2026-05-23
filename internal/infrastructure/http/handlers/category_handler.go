@@ -1,24 +1,23 @@
 package handlers
 
 import (
-	"github.com/adrianjpsantos/rental-api/internal/application"
 	"github.com/adrianjpsantos/rental-api/internal/domain/category"
-	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/request"
+	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/parses"
 
 	"github.com/gofiber/fiber/v3"
 )
 
 type CategoryHandler struct {
-	Service *application.CategoryService
+	Service category.Service
 }
 
 func (h *CategoryHandler) CategoryExists(c fiber.Ctx) error {
-	categoryName, err := request.ParseExistsCategory(c)
+	categoryName, err := parses.ParseBody[string](c)
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
 
-	exists, err := h.Service.CategoryExists(c.Context(), categoryName)
+	exists, err := h.Service.Exists(c.Context(), categoryName)
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
 	}
@@ -29,27 +28,27 @@ func (h *CategoryHandler) CategoryExists(c fiber.Ctx) error {
 }
 
 func (h *CategoryHandler) CreateCategory(c fiber.Ctx) error {
-	newCat, err := request.ParseCategoryCreateInput(c)
+	newCat, err := parses.ParseBody[category.CategoryCreateInput](c)
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
-	createdCategory, err := h.Service.Register(c.Context(), newCat)
+	err = h.Service.Create(c.Context(), newCat)
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
 	return ResponseSuccess(c, fiber.Map{
-		"category_id": createdCategory.ID,
+		"message": "Category Created",
 	})
 }
 
 func (h *CategoryHandler) DeleteCategory(c fiber.Ctx) error {
-	categoryId, err := request.ParseUUIDParam(c, "category_id")
+	categoryId, err := parses.ParseUUIDParam(c, "category_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	err = h.Service.Delete(c.Context(), categoryId)
+	err = h.Service.Delete(c.Context(), *categoryId)
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
 	}
@@ -60,12 +59,12 @@ func (h *CategoryHandler) DeleteCategory(c fiber.Ctx) error {
 }
 
 func (h *CategoryHandler) GetCategoryByID(c fiber.Ctx) error {
-	categoryId, err := request.ParseUUIDParam(c, "category_id")
+	categoryId, err := parses.ParseUUIDParam(c, "category_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	existingCategory, err := h.Service.GetByID(c.Context(), categoryId)
+	existingCategory, err := h.Service.GetByID(c.Context(), *categoryId)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
@@ -78,7 +77,7 @@ func (h *CategoryHandler) GetCategoryByID(c fiber.Ctx) error {
 
 // ListCategories implements [category.InterfaceCategoryHandler].
 func (h *CategoryHandler) ListCategories(c fiber.Ctx) error {
-	categories, err := h.Service.ListCategories(c.Context())
+	categories, err := h.Service.List(c.Context())
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
 	}
@@ -89,29 +88,29 @@ func (h *CategoryHandler) ListCategories(c fiber.Ctx) error {
 }
 
 func (h *CategoryHandler) UpdateCategory(c fiber.Ctx) error {
-	categoryId, err := request.ParseUUIDParam(c, "category_id")
+	categoryId, err := parses.ParseUUIDParam(c, "category_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	toUpdateCat, err := request.ParseCategoryUpdate(c)
+	toUpdateCat, err := parses.ParseBody[category.CategoryUpdate](c)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
 
-	updatedCategory, err := h.Service.Update(c.Context(), categoryId, toUpdateCat)
+	err = h.Service.Update(c.Context(), *categoryId, toUpdateCat)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
 	return ResponseSuccess(c, fiber.Map{
-		"updated_category": updatedCategory,
+		"message": "Updated Category",
 	})
 }
 
-func NewCategoryHandler(service *application.CategoryService) category.InterfaceCategoryHandler {
+func NewCategoryHandler(service category.Service) *CategoryHandler {
 	return &CategoryHandler{
 		Service: service,
 	}

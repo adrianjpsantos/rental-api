@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/adrianjpsantos/rental-api/internal/domain/user"
 	"github.com/adrianjpsantos/rental-api/internal/security"
@@ -11,63 +12,67 @@ import (
 
 // UserService contém toda a lógica de negócio relacionada a usuários
 type UserService struct {
-	userRepo user.InterfaceUserRepository
+	repository user.Repository
 }
 
-// NewUserService cria uma nova instância do serviço
-func NewUserService(userRepo user.InterfaceUserRepository) *UserService {
+func (s *UserService) GetUserForAuthentication(ctx context.Context, email string) (*user.UserForAuthentication, error) {
+	return s.GetUserForAuthentication(ctx, email)
+}
+
+func (s *UserService) Update(ctx context.Context, id uuid.UUID, input user.UserUpdateInput) error {
+	fmt.Println("USER SERVICE UPDATE: Only call repository direct")
+	return s.Update(ctx, id, input)
+}
+
+func NewUserService(repo user.Repository) user.Service {
 	return &UserService{
-		userRepo: userRepo,
+		repository: repo,
 	}
 }
 
-// Register cria um novo usuário no sistema
-func (s *UserService) Register(ctx context.Context, newUserInput user.UserCreateInput) (*user.User, error) {
+func (s *UserService) Create(ctx context.Context, input user.UserCreateInput) error {
 
-	// Verifica se o email já existe
-	exists, err := s.userRepo.ExistsByEmail(ctx, newUserInput.Email)
+	exists, err := s.ExistsByEmail(ctx, input.Email)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if exists {
-		return nil, user.ErrEmailAlreadyExists
+		return user.ErrEmailAlreadyExists
 	}
 
-	// Verifica se o CPF já existe (se informado)
-	if newUserInput.Cpf != "" {
-		exists, err = s.userRepo.ExistsByCPF(ctx, newUserInput.Cpf)
+	if input.Cpf != "" {
+		exists, err = s.ExistsByCPF(ctx, input.Cpf)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if exists {
-			return nil, user.ErrCPFAlreadyExists
+			return user.ErrCPFAlreadyExists
 		}
 	}
 
-	passwordHashed, err := security.GenerateHashedPassword(newUserInput.Password)
+	passwordHashed, err := security.GenerateHashedPassword(input.Password)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	newUserInput.Password = passwordHashed
-	// Cria a entidade usando o construtor do domínio
-	newUser, err := user.NewUser(newUserInput)
+	input.Password = passwordHashed
+	newUser, err := user.NewUser(input)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	// Persiste no banco
-	if err := s.userRepo.Create(ctx, newUser); err != nil {
-		return nil, err
+	err = s.repository.Create(ctx, *newUser)
+	if err != nil {
+		return err
 	}
 
-	return newUser, nil
+	return nil
 }
 
 // GetByID busca um usuário pelo ID
 func (s *UserService) GetByID(ctx context.Context, id uuid.UUID) (*user.User, error) {
-	existingUser, err := s.userRepo.GetByID(ctx, id)
+	existingUser, err := s.repository.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +83,19 @@ func (s *UserService) GetByID(ctx context.Context, id uuid.UUID) (*user.User, er
 }
 
 // GetByEmail busca usuário pelo email (útil para login)
-func (s *UserService) GetByEmail(ctx context.Context, email string) (*user.User, error) {
-	existingUser, err := s.userRepo.GetByEmail(ctx, email)
+func (s *UserService) GetByEmail(ctx context.Context, email string) (*user.UserPublic, error) {
+	existingUser, err := s.repository.GetByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+	if existingUser == nil {
+		return nil, user.ErrUserNotFound
+	}
+	return existingUser, nil
+}
+
+func (s *UserService) GetByCPF(ctx context.Context, cpf string) (*user.UserPublic, error) {
+	existingUser, err := s.repository.GetByCPF(ctx, cpf)
 	if err != nil {
 		return nil, err
 	}
@@ -90,10 +106,10 @@ func (s *UserService) GetByEmail(ctx context.Context, email string) (*user.User,
 }
 
 // UpdateProfile atualiza dados do perfil do usuário
-func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, updated user.UserUpdate) (*user.User, error) {
+func (s *UserService) UpdateProfile(ctx context.Context, id uuid.UUID, input user.UserUpdateInput) (*user.User, error) {
 
 	// Busca o usuário atual
-	existingUser, err := s.userRepo.GetByID(ctx, userID)
+	existingUser, err := s.repository.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -105,10 +121,10 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, updat
 	// (a verificação de autorização normalmente é feita no Handler)
 
 	// Atualiza apenas os campos enviados
-	existingUser.Update(updated)
+	existingUser.Update(input)
 
 	// Persiste as alterações
-	if err := s.userRepo.Update(ctx, existingUser); err != nil {
+	if err := s.repository.Update(ctx, *existingUser); err != nil {
 		return nil, err
 	}
 
@@ -116,24 +132,24 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, updat
 }
 
 func (s *UserService) ExistsByEmail(ctx context.Context, email string) (bool, error) {
-	return s.userRepo.ExistsByEmail(ctx, email)
+	return s.repository.ExistsByEmail(ctx, email)
 }
 
 func (s *UserService) ExistsByCPF(ctx context.Context, cpf string) (bool, error) {
-	return s.userRepo.ExistsByCPF(ctx, cpf)
+	return s.repository.ExistsByCPF(ctx, cpf)
 }
 
 // UpdateReputation atualiza a reputação do usuário (usado após uma review)
-func (s *UserService) UpdateReputation(ctx context.Context, userID uuid.UUID) error {
-	return s.userRepo.UpdateReputationCache(ctx, userID)
+func (s *UserService) UpdateReputationCache(ctx context.Context, id uuid.UUID) error {
+	return s.repository.UpdateReputationCache(ctx, id)
 }
 
-func (s *UserService) UpdateTotalRentalCache(ctx context.Context, userID uuid.UUID) error {
-	return s.userRepo.UpdateTotalRentalCache(ctx, userID)
+func (s *UserService) UpdateTotalRentalCache(ctx context.Context, id uuid.UUID) error {
+	return s.repository.UpdateTotalRentalCache(ctx, id)
 }
 
-func (s *UserService) UpdateTotalItemsRentedCache(ctx context.Context, userID uuid.UUID) error {
-	return s.userRepo.UpdateTotalItemsRentedCache(ctx, userID)
+func (s *UserService) UpdateTotalItemsRentedCache(ctx context.Context, id uuid.UUID) error {
+	return s.repository.UpdateTotalItemsRentedCache(ctx, id)
 }
 
 // ListUsers (exemplo - útil para admin)
@@ -142,6 +158,6 @@ func (s *UserService) ListUsers(ctx context.Context) ([]*user.User, error) {
 	return nil, errors.New("não implementado ainda")
 }
 
-func (s *UserService) Delete(ctx context.Context, userID uuid.UUID) error {
-	return s.userRepo.Delete(ctx, userID)
+func (s *UserService) Delete(ctx context.Context, id uuid.UUID) error {
+	return s.repository.Delete(ctx, id)
 }

@@ -2,16 +2,16 @@ package handlers
 
 import (
 	"github.com/adrianjpsantos/rental-api/internal/domain/authenticate"
-	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/request"
+	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/parses"
 	"github.com/gofiber/fiber/v3"
 )
 
 type AuthHandler struct {
-	authService authenticate.InterfaceAuthenticateService
+	authService authenticate.Service
 }
 
 func NewAuthHandler(
-	authService authenticate.InterfaceAuthenticateService,
+	authService authenticate.Service,
 ) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
@@ -19,7 +19,7 @@ func NewAuthHandler(
 }
 
 func (h *AuthHandler) Authenticate(c fiber.Ctx) error {
-	input, err := request.ParseAuthenticateInput(c)
+	input, err := parses.ParseBody[authenticate.AuthenticateInput](c)
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}

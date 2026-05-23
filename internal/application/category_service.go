@@ -8,41 +8,41 @@ import (
 )
 
 type CategoryService struct {
-	categoryRepo category.InterfaceCategoryRepository
+	repository category.Repository
 }
 
-func NewCategoryService(categoryRepo category.InterfaceCategoryRepository) *CategoryService {
+func NewCategoryService(repo category.Repository) category.Service {
 	return &CategoryService{
-		categoryRepo: categoryRepo,
+		repository: repo,
 	}
 }
 
-func (s *CategoryService) Register(ctx context.Context, newCat category.CategoryCreateInput) (*category.Category, error) {
+func (s *CategoryService) Create(ctx context.Context, input category.CategoryCreateInput) error {
 
-	exists, err := s.categoryRepo.Exists(ctx, newCat.Name)
+	exists, err := s.repository.Exists(ctx, input.Name)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if exists {
-		return nil, category.ErrNameAlreadyExists
+		return category.ErrNameAlreadyExists
 	}
 
 	// Cria a entidade usando o construtor do domínio
-	NewCategory, err := category.NewCategory(newCat)
+	NewCategory, err := category.NewCategory(input)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Persiste no banco
-	if err := s.categoryRepo.Create(ctx, NewCategory); err != nil {
-		return nil, err
+	if err := s.repository.Create(ctx, *NewCategory); err != nil {
+		return err
 	}
 
-	return NewCategory, nil
+	return nil
 }
 
-func (s *CategoryService) GetByID(ctx context.Context, categoryID uuid.UUID) (*category.Category, error) {
-	existingCategory, err := s.categoryRepo.GetByID(ctx, categoryID)
+func (s *CategoryService) GetByID(ctx context.Context, id uuid.UUID) (*category.Category, error) {
+	existingCategory, err := s.repository.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -52,29 +52,29 @@ func (s *CategoryService) GetByID(ctx context.Context, categoryID uuid.UUID) (*c
 	return existingCategory, nil
 }
 
-func (s *CategoryService) Update(ctx context.Context, categoryID uuid.UUID, updated category.CategoryUpdate) (*category.Category, error) {
+func (s *CategoryService) Update(ctx context.Context, id uuid.UUID, update category.CategoryUpdate) error {
 
-	existingCategory, err := s.categoryRepo.GetByID(ctx, categoryID)
+	existingCategory, err := s.repository.GetByID(ctx, id)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if existingCategory == nil {
-		return nil, category.ErrCategoryNotFound
+		return category.ErrCategoryNotFound
 	}
 
-	existingCategory.Update(updated)
+	existingCategory.Update(update)
 
 	// Persiste as alterações
-	if err := s.categoryRepo.Update(ctx, existingCategory); err != nil {
-		return nil, err
+	if err := s.repository.Update(ctx, *existingCategory); err != nil {
+		return err
 	}
 
-	return existingCategory, nil
+	return nil
 }
 
-func (s *CategoryService) ListCategories(ctx context.Context) ([]*category.Category, error) {
+func (s *CategoryService) List(ctx context.Context) ([]*category.Category, error) {
 
-	list, err := s.categoryRepo.List(ctx)
+	list, err := s.repository.List(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (s *CategoryService) ListCategories(ctx context.Context) ([]*category.Categ
 }
 
 func (s *CategoryService) Delete(ctx context.Context, slotID uuid.UUID) error {
-	err := s.categoryRepo.Delete(ctx, slotID)
+	err := s.repository.Delete(ctx, slotID)
 
 	if err != nil {
 		return err
@@ -92,6 +92,6 @@ func (s *CategoryService) Delete(ctx context.Context, slotID uuid.UUID) error {
 	return nil
 }
 
-func (s *CategoryService) CategoryExists(ctx context.Context, name string) (bool, error) {
-	return s.categoryRepo.Exists(ctx, name)
+func (s *CategoryService) Exists(ctx context.Context, name string) (bool, error) {
+	return s.repository.Exists(ctx, name)
 }

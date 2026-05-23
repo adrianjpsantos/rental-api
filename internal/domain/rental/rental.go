@@ -1,6 +1,7 @@
 package rental
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,15 +15,15 @@ const (
 	DeliveryShipping DeliveryMethod = "shipping" // Frete (transportadora)
 )
 
-type Status string
+type RentalStatus string
 
 const (
-	Pending   Status = "pending"
-	Approved  Status = "approved"
-	Active    Status = "active"
-	Completed Status = "completed"
-	Cancelled Status = "cancelled"
-	Rejected  Status = "rejected"
+	Pending   RentalStatus = "pending"
+	Approved  RentalStatus = "approved"
+	Active    RentalStatus = "active"
+	Completed RentalStatus = "completed"
+	Cancelled RentalStatus = "cancelled"
+	Rejected  RentalStatus = "rejected"
 )
 
 type PaymentStatus string
@@ -42,7 +43,7 @@ type Rental struct {
 	StartDate          time.Time
 	EndDate            time.Time
 	TotalAmount        float64
-	Status             Status
+	Status             RentalStatus
 	PaymentStatus      PaymentStatus
 	DeliveryMethod     DeliveryMethod
 	Notes              string
@@ -54,20 +55,31 @@ type Rental struct {
 	CancelledAt        *time.Time
 }
 
+type RentalCreateInput struct {
+	ItemID         uuid.UUID
+	LesseeID       uuid.UUID
+	LessorID       uuid.UUID
+	StartDate      time.Time
+	EndDate        time.Time
+	TotalAmount    float64
+	DeliveryMethod DeliveryMethod
+	Notes          string
+}
+
 // NewRental cria uma nova solicitação de aluguel
-func NewRental(itemID, lesseeID, lessorID uuid.UUID, startDate, endDate time.Time, totalAmount float64, deliveryMethod DeliveryMethod, notes string) (*Rental, error) {
+func NewRental(input RentalCreateInput) (*Rental, error) {
 	rental := &Rental{
 		Id:             uuid.New(),
-		ItemID:         itemID,
-		LesseeID:       lesseeID,
-		LessorID:       lessorID,
-		StartDate:      startDate,
-		EndDate:        endDate,
-		TotalAmount:    totalAmount,
+		ItemID:         input.ItemID,
+		LesseeID:       input.LesseeID,
+		LessorID:       input.LessorID,
+		StartDate:      input.StartDate,
+		EndDate:        input.EndDate,
+		TotalAmount:    input.TotalAmount,
 		Status:         Pending,
 		PaymentStatus:  PayPending,
-		DeliveryMethod: deliveryMethod,
-		Notes:          notes,
+		DeliveryMethod: input.DeliveryMethod,
+		Notes:          input.Notes,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
 	}
@@ -80,7 +92,7 @@ func NewRental(itemID, lesseeID, lessorID uuid.UUID, startDate, endDate time.Tim
 }
 
 // UpdateStatus atualiza o status do aluguel
-func (r *Rental) UpdateStatus(newStatus Status) error {
+func (r *Rental) UpdateStatus(newStatus RentalStatus) error {
 	if !r.CanChangeTo(newStatus) {
 		return ErrInvalidStatusTransition
 	}
@@ -102,4 +114,43 @@ func (r *Rental) UpdateStatus(newStatus Status) error {
 	}
 
 	return r.Validate()
+}
+
+// CanChangeTo verifica se é possível mudar para um novo status
+func (r *Rental) CanChangeTo(newStatus RentalStatus) bool {
+	switch r.Status {
+	case Pending:
+		return newStatus == Approved || newStatus == Rejected || newStatus == Cancelled
+	case Approved:
+		return newStatus == Active || newStatus == Cancelled
+	case Active:
+		return newStatus == Completed || newStatus == Cancelled
+	default:
+		return false
+	}
+}
+
+// IsActive retorna se o aluguel está em andamento
+func (r *Rental) IsActive() bool {
+	return r.Status == Active
+}
+
+// IsPending retorna se ainda está aguardando aprovação
+func (r *Rental) IsPending() bool {
+	return r.Status == Pending
+}
+
+func (r *Rental) Validate() error {
+	fmt.Println("Validate() Rental Not Implemented")
+	return nil
+}
+
+func ParseRentalStatus(value string) (*RentalStatus, error) {
+	switch RentalStatus(value) {
+	case Active, Rejected, Pending, Approved, Completed, Cancelled:
+		rt := RentalStatus(value)
+		return &rt, nil
+	default:
+		return nil, ErrInvalidStatus
+	}
 }

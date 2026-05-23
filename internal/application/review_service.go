@@ -10,44 +10,45 @@ import (
 )
 
 type ReviewService struct {
-	reviewRepo review.InterfaceReviewRepository
-	userRepo   user.InterfaceUserRepository
+	reviewRepo  review.Repository
+	userService user.Service
 }
 
-func NewReviewService(reviewRepo review.InterfaceReviewRepository, userRepo user.InterfaceUserRepository) *ReviewService {
+func NewReviewService(reviewRepo review.Repository, userService user.Service) review.Service {
 	return &ReviewService{
-		reviewRepo: reviewRepo,
-		userRepo:   userRepo,
+		reviewRepo:  reviewRepo,
+		userService: userService,
 	}
 }
 
-func (s *ReviewService) Register(ctx context.Context, rentalID uuid.UUID, reviewerID uuid.UUID, reviewedID uuid.UUID, itemID uuid.UUID, rating int, comment string, reviewType review.ReviewType) (*review.Review, error) {
+func (s *ReviewService) ExistsByRentalAndReviewer(ctx context.Context, rentalID uuid.UUID, reviewerID uuid.UUID) (bool, error) {
+	return s.reviewRepo.ExistsByRentalAndReviewer(ctx, rentalID, reviewerID)
+}
 
-	// Verifica se o email já existe
-	exists, err := s.reviewRepo.ExistsByRentalAndReviewer(ctx, rentalID, reviewerID)
+func (s *ReviewService) Create(ctx context.Context, input review.ReviewCreateInput) error {
+
+	exists, err := s.ExistsByRentalAndReviewer(ctx, input.RentalID, input.ReviewerID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if exists {
-		return nil, review.ErrReviewAlreadyExists
+		return review.ErrReviewAlreadyExists
 	}
 
-	// Cria a entidade usando o construtor do domínio
-	newReview, err := review.NewReview(rentalID, reviewerID, reviewedID, itemID, rating, comment, reviewType)
+	newReview, err := review.NewReview(input)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	// Persiste no banco
-	if err := s.reviewRepo.Create(ctx, newReview); err != nil {
-		return nil, err
+	if err := s.reviewRepo.Create(ctx, *newReview); err != nil {
+		return err
 	}
 
-	if err := s.userRepo.UpdateReputationCache(ctx, reviewedID); err != nil {
+	if err := s.userService.UpdateReputationCache(ctx, input.ReviewedID); err != nil {
 		log.Println(err)
 	}
 
-	return newReview, nil
+	return nil
 }
 
 func (s *ReviewService) GetByID(ctx context.Context, id uuid.UUID) (*review.Review, error) {

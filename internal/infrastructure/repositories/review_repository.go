@@ -12,11 +12,11 @@ type ReviewRepository struct {
 	db *sql.DB
 }
 
-func NewReviewRepository(db *sql.DB) review.InterfaceReviewRepository {
+func NewReviewRepository(db *sql.DB) review.Repository {
 	return &ReviewRepository{db: db}
 }
 
-func (r *ReviewRepository) Create(ctx context.Context, review *review.Review) error {
+func (r *ReviewRepository) Create(ctx context.Context, review review.Review) error {
 	query := `
 		INSERT INTO reviews (
 			id, rental_id, reviewer_id, reviewed_id,

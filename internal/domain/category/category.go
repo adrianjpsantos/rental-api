@@ -1,6 +1,7 @@
 package category
 
 import (
+	"regexp"
 	"strings"
 	"time"
 
@@ -48,7 +49,7 @@ func NewCategory(newCat CategoryCreateInput) (*Category, error) {
 		UpdatedAt:   time.Now(),
 	}
 
-	category.Slug = generateSlug(category.Name)
+	category.GenerateSlug()
 
 	if err := category.Validate(); err != nil {
 		return nil, err
@@ -63,7 +64,7 @@ func (c *Category) Update(update CategoryUpdate) error {
 
 	if update.Name != "" {
 		c.Name = strings.TrimSpace(update.Name)
-		c.Slug = generateSlug(c.Name) // ← importante!
+		c.GenerateSlug() // ← importante!
 		updated = true
 	}
 
@@ -93,4 +94,65 @@ func (c *Category) Update(update CategoryUpdate) error {
 	}
 
 	return nil
+}
+
+func (c *Category) Validate() error {
+	if err := c.validateName(); err != nil {
+		return err
+	}
+	if err := c.validateSlug(); err != nil {
+		return err
+	}
+	if err := c.validateDescription(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Category) validateName() error {
+	name := strings.TrimSpace(c.Name)
+	if name == "" {
+		return ErrInvalidName
+	}
+	if len(name) < 3 {
+		return ErrNameTooShort
+	}
+	if len(name) > 80 {
+		return ErrNameTooLong
+	}
+	return nil
+}
+
+func (c *Category) validateSlug() error {
+	if c.Slug == "" {
+		return ErrInvalidSlug
+	}
+	if !c.IsValidSlug() {
+		return ErrSlugInvalidFormat
+	}
+	return nil
+}
+
+func (c *Category) validateDescription() error {
+	if len(strings.TrimSpace(c.Description)) > 500 {
+		return ErrDescriptionTooLong
+	}
+	return nil
+}
+
+// generateSlug gera um slug a partir do nome
+func (c *Category) GenerateSlug() string {
+	slug := strings.ToLower(strings.TrimSpace(c.Name))
+	slug = strings.ReplaceAll(slug, " ", "-")
+	// Remove caracteres especiais
+	slug = regexp.MustCompile(`[^a-z0-9-]`).ReplaceAllString(slug, "")
+	// Remove hífens duplicados
+	slug = regexp.MustCompile(`-+`).ReplaceAllString(slug, "-")
+	return strings.Trim(slug, "-")
+}
+
+// isValidSlug verifica se o slug está no formato correto
+func (c *Category) IsValidSlug() bool {
+	match, _ := regexp.MatchString(`^[a-z0-9]+(?:-[a-z0-9]+)*$`, c.Slug)
+	return match
 }

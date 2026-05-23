@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-type InterfaceAuthenticateService interface {
+type Service interface {
 	Authenticate(ctx context.Context, authenticateInput AuthenticateInput) (AuthenticateOutput, error)
 	Logout(ctx context.Context, userID string) error
 }

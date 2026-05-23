@@ -15,7 +15,7 @@ type RentalRepository struct {
 }
 
 // Create implements [rental.InterfaceRentalRepository].
-func (r *RentalRepository) Create(ctx context.Context, rental *rental.Rental) error {
+func (r *RentalRepository) Create(ctx context.Context, rental rental.Rental) error {
 
 	query := `INSERT INTO rentals (id,item_id,lessee_id,lessor_id,start_date,end_date,total_amount,status,payment_status,delivery_method,notes,created_at,update_at,started_at)
 	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`
@@ -95,7 +95,7 @@ func (r *RentalRepository) GetByID(ctx context.Context, id uuid.UUID) (*rental.R
 }
 
 // ListByLessee implements [rental.InterfaceRentalRepository].
-func (r *RentalRepository) ListByLessee(ctx context.Context, lesseeID uuid.UUID, status *rental.Status) ([]*rental.Rental, error) {
+func (r *RentalRepository) ListByLessee(ctx context.Context, lesseeID uuid.UUID, status *rental.RentalStatus) ([]*rental.Rental, error) {
 	var rentals []*rental.Rental
 
 	query := `SELECT id, item_id, lessee_id, lessor_id, start_date, end_date, total_amount, status, payment_status, delivery_method, notes, created_at, updated_at, started_at, completed_at, cancelled_at
@@ -150,7 +150,7 @@ func (r *RentalRepository) ListByLessee(ctx context.Context, lesseeID uuid.UUID,
 }
 
 // ListByLessor implements [rental.InterfaceRentalRepository].
-func (r *RentalRepository) ListByLessor(ctx context.Context, lessorID uuid.UUID, status *rental.Status) ([]*rental.Rental, error) {
+func (r *RentalRepository) ListByLessor(ctx context.Context, lessorID uuid.UUID, status *rental.RentalStatus) ([]*rental.Rental, error) {
 	var rentals []*rental.Rental
 
 	query := `SELECT id, item_id, lessee_id, lessor_id, start_date, end_date, total_amount, status, payment_status, delivery_method, notes, created_at, updated_at, started_at, completed_at, cancelled_at
@@ -204,7 +204,7 @@ func (r *RentalRepository) ListByLessor(ctx context.Context, lessorID uuid.UUID,
 	return rentals, nil
 }
 
-func (r *RentalRepository) GetAllUserRentals(ctx context.Context, userID uuid.UUID, status *rental.Status) ([]*rental.Rental, error) {
+func (r *RentalRepository) GetAllUserRentals(ctx context.Context, userID uuid.UUID, status *rental.RentalStatus) ([]*rental.Rental, error) {
 	var rentals []*rental.Rental
 
 	query := `SELECT id, item_id, lessee_id, lessor_id, start_date, end_date, total_amount, status, payment_status, delivery_method, notes, created_at, updated_at, started_at, completed_at, cancelled_at
@@ -259,7 +259,7 @@ func (r *RentalRepository) GetAllUserRentals(ctx context.Context, userID uuid.UU
 }
 
 // Update implements [rental.InterfaceRentalRepository].
-func (r *RentalRepository) Update(ctx context.Context, rent *rental.Rental) error {
+func (r *RentalRepository) Update(ctx context.Context, rent rental.Rental) error {
 	query := `
 		UPDATE rentals SET
 			item_id = $1,
@@ -313,6 +313,6 @@ func (r *RentalRepository) Update(ctx context.Context, rent *rental.Rental) erro
 	return nil
 }
 
-func NewRentalRepository(db *sql.DB) rental.InterfaceRentalRepository {
+func NewRentalRepository(db *sql.DB) rental.Repository {
 	return &RentalRepository{db: db}
 }

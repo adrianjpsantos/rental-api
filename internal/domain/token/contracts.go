@@ -6,7 +6,7 @@ import (
 	"github.com/adrianjpsantos/rental-api/internal/domain/authenticate"
 )
 
-type InterfaceTokenService interface {
+type Service interface {
 	GenerateAccessToken(ctx context.Context, payload authenticate.AuthenticatePayload) (string, error)
 	GenerateRefreshToken(ctx context.Context, payload authenticate.AuthenticatePayload) (string, error)
 

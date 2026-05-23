@@ -28,25 +28,27 @@ type Review struct {
 	UniqueRentalReview string `json:"unique_rental_review"` // apenas referência
 }
 
-func NewReview(
-	rentalID uuid.UUID,
-	reviewerID uuid.UUID,
-	reviewedID uuid.UUID,
-	itemID uuid.UUID,
-	rating int,
-	comment string,
-	reviewType ReviewType,
-) (*Review, error) {
+type ReviewCreateInput struct {
+	RentalID   uuid.UUID  `json:"rental_id"`
+	ReviewerID uuid.UUID  `json:"reviewer_id"`
+	ReviewedID uuid.UUID  `json:"reviewed_id"`
+	ItemID     uuid.UUID  `json:"item_id"`
+	Rating     int        `json:"rating"`
+	Comment    string     `json:"comment"`
+	ReviewType ReviewType `json:"review_type"`
+}
+
+func NewReview(input ReviewCreateInput) (*Review, error) {
 
 	review := &Review{
 		Id:         uuid.New(),
-		RentalID:   rentalID,
-		ReviewerID: reviewerID,
-		ReviewedID: reviewedID,
-		ItemID:     itemID,
-		Rating:     rating,
-		Comment:    comment,
-		ReviewType: reviewType,
+		RentalID:   input.RentalID,
+		ReviewerID: input.ReviewerID,
+		ReviewedID: input.ReviewedID,
+		ItemID:     input.ItemID,
+		Rating:     input.Rating,
+		Comment:    input.Comment,
+		ReviewType: input.ReviewType,
 		CreatedAt:  time.Now(),
 	}
 
@@ -60,4 +62,63 @@ func NewReview(
 // IsValidRating verifica se a nota está entre 1 e 5
 func (r *Review) IsValidRating() bool {
 	return r.Rating >= 1 && r.Rating <= 5
+}
+
+func (r *Review) Validate() error {
+	if r.RentalID == uuid.Nil {
+		return ErrInvalidRentalID
+	}
+	if r.ReviewerID == uuid.Nil {
+		return ErrInvalidReviewerID
+	}
+	if r.ReviewedID == uuid.Nil {
+		return ErrInvalidReviewedID
+	}
+	if r.ItemID == uuid.Nil {
+		return ErrInvalidItemID
+	}
+	if r.ReviewerID == r.ReviewedID {
+		return ErrCannotReviewOwnRental
+	}
+	if !r.IsValidRating() {
+		return ErrInvalidRating
+	}
+	if r.ReviewType != AsLessor && r.ReviewType != AsLessee {
+		return ErrInvalidReviewType
+	}
+
+	return nil
+}
+
+func ParseReviewType(value string) (*ReviewType, error) {
+	switch ReviewType(value) {
+	case AsLessor, AsLessee:
+		rt := ReviewType(value)
+		return &rt, nil
+	default:
+		return nil, ErrInvalidReviewType
+	}
+}
+
+// CanBeReviewedBy verifica se o usuário pode avaliar o aluguel
+func (r *Review) CanBeReviewedBy(userID uuid.UUID) bool {
+	return r.ReviewerID == userID
+}
+
+// IsFromLessee retorna se a avaliação foi feita pelo locatário (sobre o locador)
+func (r *Review) IsFromLessee() bool {
+	return r.ReviewType == AsLessee
+}
+
+// IsFromLessor retorna se a avaliação foi feita pelo locador (sobre o locatário)
+func (r *Review) IsFromLessor() bool {
+	return r.ReviewType == AsLessor
+}
+
+// CanReviewRental verifica regras gerais para avaliar um aluguel
+func (r *Review) CanReviewRental() error {
+	if !r.IsValidRating() {
+		return ErrInvalidRating
+	}
+	return nil
 }

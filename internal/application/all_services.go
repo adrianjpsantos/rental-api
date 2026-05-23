@@ -2,19 +2,25 @@ package application
 
 import (
 	"github.com/adrianjpsantos/rental-api/internal/domain/authenticate"
+	"github.com/adrianjpsantos/rental-api/internal/domain/availability"
+	"github.com/adrianjpsantos/rental-api/internal/domain/category"
+	"github.com/adrianjpsantos/rental-api/internal/domain/item"
+	"github.com/adrianjpsantos/rental-api/internal/domain/rental"
+	"github.com/adrianjpsantos/rental-api/internal/domain/review"
 	"github.com/adrianjpsantos/rental-api/internal/domain/token"
+	"github.com/adrianjpsantos/rental-api/internal/domain/user"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/repositories"
 )
 
 type AllServices struct {
-	UserService         *UserService
-	ReviewService       *ReviewService
-	RentalService       *RentalService
-	ItemService         *ItemService
-	AvailabilityService *AvailabilityService
-	CategoryService     *CategoryService
-	AuthService         authenticate.InterfaceAuthenticateService
-	TokenService        token.InterfaceTokenService
+	UserService         user.Service
+	ReviewService       review.Service
+	RentalService       rental.Service
+	ItemService         item.Service
+	AvailabilityService availability.Service
+	CategoryService     category.Service
+	AuthService         authenticate.Service
+	TokenService        token.Service
 }
 
 func NewAllServices(repos *repositories.AllRepositories) *AllServices {
@@ -22,7 +28,7 @@ func NewAllServices(repos *repositories.AllRepositories) *AllServices {
 
 	reviewService := NewReviewService(
 		repos.ReviewRepo,
-		repos.UserRepo,
+		userService,
 	)
 
 	rentalService := NewRentalService(
@@ -43,7 +49,10 @@ func NewAllServices(repos *repositories.AllRepositories) *AllServices {
 
 	tokenService := NewTokenService()
 
-	authService := NewAuthService(repos.UserRepo, tokenService)
+	authService := NewAuthService(
+		userService,
+		tokenService,
+	)
 
 	return &AllServices{
 		UserService:         userService,

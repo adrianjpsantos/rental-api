@@ -1,32 +1,31 @@
 package handlers
 
 import (
-	"github.com/adrianjpsantos/rental-api/internal/application"
 	"github.com/adrianjpsantos/rental-api/internal/domain/item"
-	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/request"
+	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/parses"
 	"github.com/gofiber/fiber/v3"
 )
 
 type ItemHandler struct {
-	service *application.ItemService
+	service item.Service
 }
 
 func (h *ItemHandler) CreateItem(c fiber.Ctx) error {
 
-	newItem, err := request.ParseCreateItemInput(c)
+	newItem, err := parses.ParseBody[item.ItemCreateInput](c)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
 
-	createItem, err := h.service.Register(c.Context(), newItem)
+	err = h.service.Create(c.Context(), newItem)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
 	return ResponseSuccess(c, fiber.Map{
-		"item_id": createItem.Id,
+		"message": "Item Created",
 	},
 	)
 }
@@ -36,12 +35,12 @@ func (h *ItemHandler) DeleteItem(c fiber.Ctx) error {
 }
 
 func (h *ItemHandler) GetItemByID(c fiber.Ctx) error {
-	reqId, err := request.ParseUUIDParam(c, "item_id")
+	itemId, err := parses.ParseUUIDParam(c, "item_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	existingItem, err := h.service.GetByID(c.Context(), reqId)
+	existingItem, err := h.service.GetByID(c.Context(), *itemId)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
@@ -54,12 +53,12 @@ func (h *ItemHandler) GetItemByID(c fiber.Ctx) error {
 }
 
 func (h *ItemHandler) ListItems(c fiber.Ctx) error {
-	filters, err := request.ParseItemFilterInput(c)
+	filters, err := parses.ParseItemFilter(c)
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
 
-	existingItems, err := h.service.ListByFilters(c.Context(), filters)
+	existingItems, err := h.service.ListByFilters(c.Context(), *filters)
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
 	}
@@ -70,28 +69,28 @@ func (h *ItemHandler) ListItems(c fiber.Ctx) error {
 }
 
 func (h *ItemHandler) UpdateItem(c fiber.Ctx) error {
-	reqId, err := request.ParseUUIDParam(c, "item_id")
+	itemId, err := parses.ParseUUIDParam(c, "item_id")
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "ID Inválido")
 	}
 
-	toUpdate, err := request.ParseUpdateItemInput(c)
+	toUpdate, err := parses.ParseBody[item.ItemUpdateInput](c)
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
 
-	updatedItem, err := h.service.Update(c.Context(), reqId, toUpdate)
+	err = h.service.Update(c.Context(), *itemId, toUpdate)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
 	return ResponseSuccess(c, fiber.Map{
-		"updated_item_id": updatedItem.Id,
+		"message": "Item updated",
 	},
 	)
 }
 
-func NewItemHandler(service *application.ItemService) item.InterfaceItemHandler {
+func NewItemHandler(service item.Service) *ItemHandler {
 	return &ItemHandler{service: service}
 }

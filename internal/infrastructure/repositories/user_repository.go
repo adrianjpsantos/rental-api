@@ -35,25 +35,7 @@ func (r *UserRepository) GetUserForAuthentication(ctx context.Context, email str
 	return &u, nil
 }
 
-func (r *UserRepository) Create(ctx context.Context, u *user.User) error {
-
-	existsEmail, err := r.ExistsByEmail(ctx, u.Email)
-	if err != nil {
-		return err
-	}
-	if existsEmail {
-		return user.ErrEmailAlreadyExists
-	}
-
-	existsCPF, err := r.ExistsByCPF(ctx, u.CPF)
-	if err != nil {
-		return err
-	}
-	if existsCPF {
-		return user.ErrCPFAlreadyExists
-	}
-
-	///NOT EXIST
+func (r *UserRepository) Create(ctx context.Context, input user.User) error {
 
 	query := `
 	INSERT INTO users 
@@ -61,22 +43,22 @@ func (r *UserRepository) Create(ctx context.Context, u *user.User) error {
 	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
 	`
 
-	_, err = r.db.ExecContext(ctx, query,
-		u.Id,
-		u.Name,
-		u.Email,
-		u.PasswordHash,
-		u.CPF,
-		u.Phone,
-		u.BirthDate,
-		u.AvatarURL,
-		u.IsVerified,
-		u.Role,
-		u.Reputation,
-		u.TotalRentals,
-		u.TotalItemsRented,
-		u.CreatedAt,
-		u.UpdatedAt,
+	_, err := r.db.ExecContext(ctx, query,
+		input.Id,
+		input.Name,
+		input.Email,
+		input.PasswordHash,
+		input.CPF,
+		input.Phone,
+		input.BirthDate,
+		input.AvatarURL,
+		input.IsVerified,
+		input.Role,
+		input.Reputation,
+		input.TotalRentals,
+		input.TotalItemsRented,
+		input.CreatedAt,
+		input.UpdatedAt,
 	)
 
 	if err != nil {
@@ -146,23 +128,13 @@ func (r *UserRepository) ExistsByEmail(ctx context.Context, email string) (bool,
 }
 
 // GetByCPF implements [user.InterfaceUserRepository].
-func (r *UserRepository) GetByCPF(ctx context.Context, cpf string) (*user.User, error) {
-	var u user.User
+func (r *UserRepository) GetByCPF(ctx context.Context, cpf string) (*user.UserPublic, error) {
+	var u user.UserPublic
 
-	query := `SELECT id,name,email,cpf,phone,birth_date,avatar_url,is_verified,role,reputation,total_rentals,total_items_rented,created_at FROM users WHERE id = $1`
+	query := `SELECT id,name,role FROM users WHERE cpf = $1`
 	err := r.db.QueryRowContext(ctx, query, cpf).Scan(&u.Id,
 		&u.Name,
-		&u.Email,
-		&u.CPF,
-		&u.Phone,
-		&u.BirthDate,
-		&u.AvatarURL,
-		&u.IsVerified,
-		&u.Role,
-		&u.Reputation,
-		&u.TotalRentals,
-		&u.TotalItemsRented,
-		&u.CreatedAt)
+		&u.Role)
 
 	if err == sql.ErrNoRows {
 		return nil, user.ErrUserNotFound
@@ -176,23 +148,15 @@ func (r *UserRepository) GetByCPF(ctx context.Context, cpf string) (*user.User, 
 	return &u, nil
 }
 
-func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*user.User, error) {
-	var u user.User
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*user.UserPublic, error) {
+	var u user.UserPublic
 
-	query := `SELECT id,name,email,cpf,phone,birth_date,avatar_url,is_verified,role,reputation,total_rentals,total_items_rented,created_at FROM users WHERE email = $1`
-	err := r.db.QueryRowContext(ctx, query, email).Scan(&u.Id,
+	query := `SELECT id,name,role FROM users WHERE email = $1`
+	err := r.db.QueryRowContext(ctx, query, email).Scan(
+		&u.Id,
 		&u.Name,
-		&u.Email,
-		&u.CPF,
-		&u.Phone,
-		&u.BirthDate,
-		&u.AvatarURL,
-		&u.IsVerified,
 		&u.Role,
-		&u.Reputation,
-		&u.TotalRentals,
-		&u.TotalItemsRented,
-		&u.CreatedAt)
+	)
 
 	if err == sql.ErrNoRows {
 		return nil, user.ErrUserNotFound
@@ -235,10 +199,10 @@ func (r *UserRepository) GetByID(ctx context.Context, userID uuid.UUID) (*user.U
 }
 
 // Update implements [user.InterfaceUserRepository].
-func (r *UserRepository) Update(ctx context.Context, u *user.User) error {
+func (r *UserRepository) Update(ctx context.Context, u user.User) error {
 	query := `
 	UPDATE users 
-	(id = $1,name=$2,email=$3,password_hash=$4,cpf=$5,phone=$6,birth_date=$7,avatar_url=$8,is_verified=$9,role=$10,reputation=$11,total_rentals=$12,total_items_rented=$13,created_at=$14,update_at=$15) 
+	(name=$2,email=$3,password_hash=$4,cpf=$5,phone=$6,birth_date=$7,avatar_url=$8,is_verified=$9,role=$10,reputation=$11,total_rentals=$12,total_items_rented=$13,created_at=$14,update_at=$15) 
 	WHERE Id = $1
 	`
 	_, err := r.db.ExecContext(ctx, query,
@@ -325,6 +289,6 @@ func (r *UserRepository) UpdateReputationCache(ctx context.Context, userID uuid.
 	return nil
 }
 
-func NewUserRepository(db *sql.DB) user.InterfaceUserRepository {
+func NewUserRepository(db *sql.DB) user.Repository {
 	return &UserRepository{db: db}
 }
