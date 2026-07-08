@@ -7,7 +7,7 @@ import (
 	"github.com/adrianjpsantos/rental-api/internal/domain/item"
 	"github.com/adrianjpsantos/rental-api/internal/domain/rental"
 	"github.com/adrianjpsantos/rental-api/internal/domain/review"
-	"github.com/adrianjpsantos/rental-api/internal/domain/token"
+	"github.com/adrianjpsantos/rental-api/internal/domain/session"
 	"github.com/adrianjpsantos/rental-api/internal/domain/user"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/repositories"
 )
@@ -20,7 +20,7 @@ type AllServices struct {
 	AvailabilityService availability.Service
 	CategoryService     category.Service
 	AuthService         authenticate.Service
-	TokenService        token.Service
+	SessionService      session.Service
 }
 
 func NewAllServices(repos *repositories.AllRepositories) *AllServices {
@@ -47,11 +47,11 @@ func NewAllServices(repos *repositories.AllRepositories) *AllServices {
 		repos.CategoryRepo,
 	)
 
-	tokenService := NewTokenService()
+	sessionService := NewSessionService(repos.SessionRepo)
 
 	authService := NewAuthService(
 		userService,
-		tokenService,
+		sessionService,
 	)
 
 	return &AllServices{
@@ -61,7 +61,7 @@ func NewAllServices(repos *repositories.AllRepositories) *AllServices {
 		ItemService:         itemService,
 		AvailabilityService: availabilityService,
 		CategoryService:     categoryService,
-		TokenService:        tokenService,
+		SessionService:      sessionService,
 		AuthService:         authService,
 	}
 }

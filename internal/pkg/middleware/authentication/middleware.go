@@ -1,16 +1,17 @@
 package authentication
 
 import (
+	"fmt"
 	"strings"
 
-	"github.com/adrianjpsantos/rental-api/internal/domain/token"
+	"github.com/adrianjpsantos/rental-api/internal/domain/session"
 	"github.com/gofiber/fiber/v3"
 )
 
 const AuthenticatedUserContextKey = "authenticated_user"
 
 func AuthMiddleware(
-	tokenService token.Service,
+	sessionService session.Service,
 ) fiber.Handler {
 
 	return func(c fiber.Ctx) error {
@@ -46,7 +47,7 @@ func AuthMiddleware(
 			)
 		}
 
-		claims, err := tokenService.ValidateAccessToken(sessionToken)
+		claims, err := sessionService.ValidateAccessToken(sessionToken)
 		if err != nil {
 			return fiber.NewError(
 				fiber.StatusUnauthorized,
@@ -65,11 +66,12 @@ func AuthMiddleware(
 
 func GetAuthenticatedUser(
 	c fiber.Ctx,
-) (*token.Claims, error) {
+) (*session.Claims, error) {
 
-	user, ok := c.Locals(AuthenticatedUserContextKey).(*token.Claims)
+	user, ok := c.Locals(AuthenticatedUserContextKey).(*session.Claims)
 
 	if !ok {
+		fmt.Println("Erro GETAUTHUSER")
 		return nil, ErrAuthenticatedUserNotFound
 	}
 

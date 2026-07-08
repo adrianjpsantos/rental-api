@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/adrianjpsantos/rental-api/internal/domain/user"
@@ -39,7 +40,7 @@ func (r *UserRepository) Create(ctx context.Context, input user.User) error {
 
 	query := `
 	INSERT INTO users 
-	(id,name,email,password_hash,cpf,phone,birth_date,avatar_url,is_verified,role,reputation,total_rentals,total_items_rented,created_at,update_at) 
+	(id,name,email,password_hash,cpf,phone,birth_date,avatar_url,is_verified,role,reputation,total_rentals,total_items_rented,created_at,updated_at) 
 	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
 	`
 
@@ -62,7 +63,7 @@ func (r *UserRepository) Create(ctx context.Context, input user.User) error {
 	)
 
 	if err != nil {
-		fmt.Printf("CREATE USER ERR: %s", err.Error())
+		log.Printf("CREATE USER ERR: %s", err.Error())
 		return err
 	}
 

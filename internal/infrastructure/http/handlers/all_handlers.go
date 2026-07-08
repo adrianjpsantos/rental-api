@@ -62,7 +62,7 @@ func ResponseSuccess(c fiber.Ctx, data any) error {
 	})
 }
 
-func ResponseAuthSuccess(c fiber.Ctx, output authenticate.AuthenticateOutput) error {
+func ResponseAuthSuccess(c fiber.Ctx, output *authenticate.AuthenticateOutput) error {
 	secureCookie := config.LoadConfig().IsProduction()
 	c.Cookie(&fiber.Cookie{
 		Name:     "refresh_token",

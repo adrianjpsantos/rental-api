@@ -26,25 +26,21 @@ func SetupRouter(db *sql.DB) *fiber.App {
 
 	api.Get("/health", handlers.GetHealth)
 
-	public := api.Group("/")
+	v1 := api.Group("/v1")
 
-	private := api.Group(
-		"/",
-		authentication.AuthMiddleware(
-			services.TokenService,
-		),
+	authGroup := v1.Group("/auth")
+	SetupAuthRoutes(authGroup, apiHandlers.AuthHandler)
+
+	authMiddleware := authentication.AuthMiddleware(
+		services.SessionService,
 	)
 
-	authGroup := public.Group("/auth")
-
-	userGroup := private.Group("/users")
-	reviewGroup := private.Group("/reviews")
-	rentalGroup := private.Group("/rentals")
-	itemGroup := private.Group("/items")
-	availabilityGroup := private.Group("/availability")
-	categoryGroup := private.Group("/categories")
-
-	SetupAuthRoutes(authGroup, apiHandlers.AuthHandler)
+	userGroup := v1.Group("/user", authMiddleware)
+	reviewGroup := v1.Group("/review", authMiddleware)
+	rentalGroup := v1.Group("/rental", authMiddleware)
+	itemGroup := v1.Group("/item")
+	availabilityGroup := v1.Group("/availability", authMiddleware)
+	categoryGroup := v1.Group("/category", authMiddleware)
 
 	SetupUserRoutes(userGroup, apiHandlers.UserHandler)
 
@@ -64,6 +60,7 @@ func SetupRouter(db *sql.DB) *fiber.App {
 	SetupItemRoutes(
 		itemGroup,
 		apiHandlers.ItemHandler,
+		authMiddleware,
 	)
 
 	SetupAvailabilityRoutes(
@@ -95,19 +92,25 @@ func SetupAuthRoutes(
 	router fiber.Router,
 	handler *handlers.AuthHandler,
 ) {
+	router.Post("/signup", handler.SignUp)
 	router.Post("/login", handler.Authenticate)
 	router.Post("/refresh", handler.Refresh)
 	router.Post("/logout", handler.Logout)
+
 }
 
 func SetupUserRoutes(
 	router fiber.Router,
 	handler *handlers.UserHandler,
 ) {
-	router.Post("/", handler.Create)
+
+	router.Get("/me", handler.GetCurrentUser)
+	router.Put("/me", handler.UpdateCurrentUser)
+	router.Delete("/me", handler.DeleteAccount)
+
 	router.Get("/:user_id", handler.GetByID)
-	router.Put("/:user_id", handler.Update)
-	router.Delete("/:user_id", handler.Delete)
+	//router.Put("/:user_id", handler.Update)
+	//router.Delete("/:user_id", handler.Delete)
 
 	router.Get("/by-email", handler.GetByEmail)
 
@@ -149,11 +152,12 @@ func SetupRentalRoutes(
 func SetupItemRoutes(
 	router fiber.Router,
 	handler *handlers.ItemHandler,
+	authMiddleware fiber.Handler,
 ) {
-	router.Post("/", handler.CreateItem)
-	router.Get("/:item_id", handler.GetItemByID)
-	router.Put("/:item_id", handler.UpdateItem)
-	router.Delete("/:item_id", handler.DeleteItem)
+	router.Post("/", handler.CreateItem, authMiddleware)
+	router.Get("/:item_id", handler.GetItemByID, authMiddleware)
+	router.Put("/:item_id", handler.UpdateItem, authMiddleware)
+	router.Delete("/:item_id", handler.DeleteItem, authMiddleware)
 
 	router.Get("/", handler.ListItems)
 }

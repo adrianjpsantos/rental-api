@@ -3,8 +3,8 @@ package authenticate
 import "github.com/google/uuid"
 
 type AuthenticateInput struct {
-	Email    string
-	Password string
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
 }
 
 type AuthenticateOutput struct {

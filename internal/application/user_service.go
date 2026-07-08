@@ -16,7 +16,7 @@ type UserService struct {
 }
 
 func (s *UserService) GetUserForAuthentication(ctx context.Context, email string) (*user.UserForAuthentication, error) {
-	return s.GetUserForAuthentication(ctx, email)
+	return s.repository.GetUserForAuthentication(ctx, email)
 }
 
 func (s *UserService) Update(ctx context.Context, id uuid.UUID, input user.UserUpdateInput) error {

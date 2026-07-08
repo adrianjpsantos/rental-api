@@ -4,23 +4,35 @@ import (
 	"context"
 
 	"github.com/adrianjpsantos/rental-api/internal/domain/authenticate"
-	"github.com/adrianjpsantos/rental-api/internal/domain/token"
+	"github.com/adrianjpsantos/rental-api/internal/domain/session"
 	"github.com/adrianjpsantos/rental-api/internal/domain/user"
 	"github.com/adrianjpsantos/rental-api/internal/security"
 )
 
 type AuthService struct {
-	UserService  user.Service
-	TokenService token.Service
+	UserService    user.Service
+	SessionService session.Service
+}
+
+func (a *AuthService) SignUp(ctx context.Context, input user.UserCreateInput) (*authenticate.AuthenticateOutput, error) {
+	err := a.UserService.Create(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	authenticated, err := a.Authenticate(ctx, authenticate.AuthenticateInput{Email: input.Email,
+		Password: input.Password})
+
+	return authenticated, nil
 }
 
 func (a *AuthService) RefreshAccessToken(ctx context.Context, refreshToken string) (string, error) {
-	refreshTokenClaims, err := a.TokenService.ValidateRefreshToken(refreshToken)
+	refreshTokenClaims, err := a.SessionService.ValidateRefreshToken(refreshToken)
 	if err != nil {
 		return "", err
 	}
 
-	return a.TokenService.GenerateAccessToken(refreshTokenClaims.Payload())
+	return a.SessionService.GenerateAccessToken(refreshTokenClaims.Payload())
 }
 
 func (a *AuthService) Logout(ctx context.Context, userID string) error {
@@ -30,14 +42,13 @@ func (a *AuthService) Logout(ctx context.Context, userID string) error {
 func (a *AuthService) Authenticate(
 	ctx context.Context,
 	input authenticate.AuthenticateInput,
-) (authenticate.AuthenticateOutput, error) {
-	emptyOutput := authenticate.AuthenticateOutput{}
+) (*authenticate.AuthenticateOutput, error) {
 
 	userForAuth, err := a.UserService.
 		GetUserForAuthentication(ctx, input.Email)
 
 	if err != nil {
-		return emptyOutput, authenticate.ErrInvalidCredentials
+		return nil, authenticate.ErrInvalidCredentials
 	}
 
 	err = security.CheckPassword(
@@ -46,34 +57,34 @@ func (a *AuthService) Authenticate(
 	)
 
 	if err != nil {
-		return emptyOutput, authenticate.ErrInvalidCredentials
+		return nil, authenticate.ErrInvalidCredentials
 	}
 
 	payload := authenticate.AuthenticatePayload{
 		UserID: userForAuth.UserID,
 	}
 
-	accessToken, err := a.TokenService.GenerateAccessToken(payload)
+	accessToken, err := a.SessionService.GenerateAccessToken(payload)
 
 	if err != nil {
-		return emptyOutput, err
+		return nil, err
 	}
 
-	refreshToken, err := a.TokenService.GenerateRefreshToken(payload)
+	refreshToken, err := a.SessionService.GenerateRefreshToken(payload)
 
 	if err != nil {
-		return emptyOutput, err
+		return nil, err
 	}
 
-	return authenticate.AuthenticateOutput{
+	return &authenticate.AuthenticateOutput{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
 }
 
-func NewAuthService(userService user.Service, tokenService token.Service) authenticate.Service {
+func NewAuthService(userService user.Service, sessionService session.Service) authenticate.Service {
 	return &AuthService{
-		UserService:  userService,
-		TokenService: tokenService,
+		UserService:    userService,
+		SessionService: sessionService,
 	}
 }

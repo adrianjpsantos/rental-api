@@ -8,6 +8,7 @@ import (
 	"github.com/adrianjpsantos/rental-api/internal/domain/item"
 	"github.com/adrianjpsantos/rental-api/internal/domain/rental"
 	"github.com/adrianjpsantos/rental-api/internal/domain/review"
+	"github.com/adrianjpsantos/rental-api/internal/domain/session"
 	"github.com/adrianjpsantos/rental-api/internal/domain/user"
 )
 
@@ -18,6 +19,7 @@ type AllRepositories struct {
 	ItemRepo         item.Repository
 	AvailabilityRepo availability.Repository
 	CategoryRepo     category.Repository
+	SessionRepo      session.Repository
 }
 
 func NewAllRepositories(db *sql.DB) *AllRepositories {
@@ -27,6 +29,7 @@ func NewAllRepositories(db *sql.DB) *AllRepositories {
 	itemRepo := NewItemRepository(db)
 	availabilityRepo := NewAvailabilityRepository(db)
 	categoryRepo := NewCategoryRepository(db)
+	sessionRepo := NewSessionRepository(db)
 
 	return &AllRepositories{
 		UserRepo:         userRepo,
@@ -35,5 +38,6 @@ func NewAllRepositories(db *sql.DB) *AllRepositories {
 		ItemRepo:         itemRepo,
 		AvailabilityRepo: availabilityRepo,
 		CategoryRepo:     categoryRepo,
+		SessionRepo:      sessionRepo,
 	}
 }

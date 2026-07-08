@@ -3,6 +3,8 @@ package handlers
 import (
 	"github.com/adrianjpsantos/rental-api/internal/domain/user"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/parses"
+	"github.com/adrianjpsantos/rental-api/internal/pkg/middleware/authentication"
+	"github.com/adrianjpsantos/rental-api/internal/security/validator"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -102,8 +104,8 @@ func (h *UserHandler) Delete(c fiber.Ctx) error {
 // Buscas
 func (h *UserHandler) GetByEmail(c fiber.Ctx) error {
 	email := parses.ParseStringQuery(c, "email")
-
-	if !user.IsValidEmail(*email) {
+	err := validator.Get().Var(email, "required,email")
+	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, user.ErrInvalidEmail.Error())
 	}
 
@@ -123,7 +125,8 @@ func (h *UserHandler) GetByEmail(c fiber.Ctx) error {
 func (h *UserHandler) ExistsByEmail(c fiber.Ctx) error {
 	email := parses.ParseStringQuery(c, "email")
 
-	if !user.IsValidEmail(*email) {
+	err := validator.Get().Var(email, "required,email")
+	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, user.ErrInvalidEmail.Error())
 	}
 
@@ -142,7 +145,8 @@ func (h *UserHandler) ExistsByEmail(c fiber.Ctx) error {
 func (h *UserHandler) ExistsByCPF(c fiber.Ctx) error {
 	cpf := parses.ParseStringQuery(c, "cpf")
 
-	if !user.IsValidCPF(*cpf) {
+	err := validator.Get().Var(cpf, "required,cpf")
+	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, user.ErrInvalidCPF.Error())
 	}
 
@@ -154,6 +158,69 @@ func (h *UserHandler) ExistsByCPF(c fiber.Ctx) error {
 
 	return ResponseSuccess(c, fiber.Map{
 		"exists": exists,
+	},
+	)
+}
+
+// Current User
+func (h *UserHandler) GetCurrentUser(c fiber.Ctx) error {
+	claims, err := authentication.GetAuthenticatedUser(c)
+	if err != nil {
+		return ResponseError(c, fiber.StatusUnauthorized, "Favor fazer login novamente")
+	}
+
+	existingUser, err := h.service.GetByID(c.Context(), claims.UserID)
+
+	if err != nil {
+		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
+	}
+
+	return ResponseSuccess(c, fiber.Map{
+		"user": existingUser,
+	},
+	)
+}
+func (h *UserHandler) UpdateCurrentUser(c fiber.Ctx) error {
+
+	claims, err := authentication.GetAuthenticatedUser(c)
+	if err != nil {
+		return ResponseError(c, fiber.StatusUnauthorized, "Favor fazer login novamente")
+	}
+
+	input, err := parses.ParseBody[user.UserUpdateInput](c)
+	if err != nil {
+		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
+	}
+
+	err = h.service.Update(c.Context(), claims.UserID, input)
+
+	if err != nil {
+		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
+	}
+
+	return ResponseSuccess(c, fiber.Map{
+		"message": "updated user",
+	},
+	)
+
+}
+
+// SOFT DELETE
+func (h *UserHandler) DeleteAccount(c fiber.Ctx) error {
+
+	claims, err := authentication.GetAuthenticatedUser(c)
+	if err != nil {
+		return ResponseError(c, fiber.StatusUnauthorized, "Favor fazer login novamente")
+	}
+
+	err = h.service.Delete(c.Context(), claims.Payload().UserID)
+
+	if err != nil {
+		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
+	}
+
+	return ResponseSuccess(c, fiber.Map{
+		"deleted_id": claims,
 	},
 	)
 }
