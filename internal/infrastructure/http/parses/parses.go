@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/adrianjpsantos/rental-api/internal/domain/item"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 )
@@ -32,6 +33,12 @@ func ParseBody[T any](c fiber.Ctx) (T, error) {
 	if err := c.Bind().Body(&req); err != nil {
 		var zero T
 		return zero, err
+	}
+	validate := validator.New()
+
+	if err := validate.Struct(req.Data); err != nil {
+		var zero T
+		return zero, fmt.Errorf("validation error: %w", err)
 	}
 
 	return req.Data, nil
