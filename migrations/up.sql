@@ -64,6 +64,18 @@ CREATE TABLE users (
     deleted_at TIMESTAMP WITH TIME ZONE
 );
 
+CREATE TABLE sessions (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL,
+    token TEXT NOT NULL UNIQUE,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    actived BOOLEAN DEFAULT TRUE,
+
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 -- CATEGORIES
 CREATE TABLE categories (
     id UUID PRIMARY KEY,
