@@ -42,7 +42,7 @@ func NewAllHandlers(services *application.AllServices) *AllHandlers {
 		services.CategoryService,
 	)
 
-	authHandler := NewAuthHandler(services.AuthService)
+	authHandler := NewAuthHandler(services.AuthService, services.SessionService)
 
 	return &AllHandlers{
 		UserHandler:         userHandler,
@@ -59,6 +59,24 @@ func ResponseSuccess(c fiber.Ctx, data any) error {
 	return c.JSON(Response{
 		Success: true,
 		Data:    data,
+	})
+}
+
+func ResponseAuthError(c fiber.Ctx, status int, err string) error {
+	secureCookie := config.LoadConfig().IsProduction()
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		HTTPOnly: true,
+		Secure:   secureCookie,
+		SameSite: "Strict",
+		Path:     "/",
+		MaxAge:   60 * 60 * 24 * 7,
+	})
+
+	return c.Status(status).JSON(Response{
+		Success: false,
+		Error:   err,
 	})
 }
 

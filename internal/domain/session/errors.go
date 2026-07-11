@@ -30,4 +30,19 @@ var (
 	ErrRefreshTokenExpired = errors.New(
 		"refresh token expirado",
 	)
+
+	ErrSessionNotFound = errors.New(
+		"sessão não encontrada",
+	)
+
+	ErrSessionAlreadyDesactivated = errors.New(
+		"sessão já desativada",
+	)
+
+	ErrSessionDesactivated = errors.New(
+		"sessão desativada",
+	)
+	ErrSessionExpired = errors.New(
+		"sessão expirada",
+	)
 )

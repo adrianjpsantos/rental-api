@@ -1,21 +1,28 @@
 package handlers
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/adrianjpsantos/rental-api/internal/domain/authenticate"
+	"github.com/adrianjpsantos/rental-api/internal/domain/session"
 	"github.com/adrianjpsantos/rental-api/internal/domain/user"
+	"github.com/adrianjpsantos/rental-api/internal/infrastructure/config"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/parses"
 	"github.com/gofiber/fiber/v3"
 )
 
 type AuthHandler struct {
-	authService authenticate.Service
+	authService    authenticate.Service
+	SessionService session.Service
 }
 
 func NewAuthHandler(
-	authService authenticate.Service,
+	authService authenticate.Service, sessionService session.Service,
 ) *AuthHandler {
 	return &AuthHandler{
-		authService: authService,
+		authService:    authService,
+		SessionService: sessionService,
 	}
 }
 
@@ -55,7 +62,16 @@ func (h *AuthHandler) Authenticate(c fiber.Ctx) error {
 }
 
 func (h *AuthHandler) Logout(c fiber.Ctx) error {
-	c.ClearCookie("refresh_token")
+	secureCookie := config.LoadConfig().IsProduction()
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Path:     "/",
+		HTTPOnly: true,
+		Secure:   secureCookie,
+		SameSite: "Strict",
+		MaxAge:   -1,
+	})
 
 	return ResponseSuccess(c, fiber.Map{
 		"message": "Logout bem-sucedido",
@@ -63,6 +79,35 @@ func (h *AuthHandler) Logout(c fiber.Ctx) error {
 }
 
 func (h *AuthHandler) Refresh(c fiber.Ctx) error {
+	refreshToken := c.Cookies("refresh_token")
 
-	return nil
+	if refreshToken == "" {
+		return ResponseError(c, fiber.StatusUnauthorized, "Refresh token não fornecido")
+	}
+
+	fmt.Println("Refresh token: ", refreshToken)
+
+	accessToken, err := h.authService.RefreshAccessToken(c.Context(), refreshToken)
+
+	if err != nil {
+		if errors.Is(err, session.ErrSessionNotFound) || errors.Is(err, session.ErrSessionExpired) || errors.Is(err, session.ErrInvalidRefreshToken) {
+			secureCookie := config.LoadConfig().IsProduction()
+			c.Cookie(&fiber.Cookie{
+				Name:     "refresh_token",
+				Value:    "",
+				Path:     "/",
+				HTTPOnly: true,
+				Secure:   secureCookie,
+				SameSite: "Strict",
+				MaxAge:   -1,
+			})
+
+			return ResponseError(c, fiber.StatusUnauthorized, err.Error())
+		}
+
+		return ResponseError(c, fiber.StatusInternalServerError, "Erro no servidor")
+	}
+	return ResponseSuccess(c, fiber.Map{
+		"access_token": accessToken,
+	})
 }

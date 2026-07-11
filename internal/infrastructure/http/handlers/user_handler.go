@@ -169,7 +169,7 @@ func (h *UserHandler) GetCurrentUser(c fiber.Ctx) error {
 		return ResponseError(c, fiber.StatusUnauthorized, "Favor fazer login novamente")
 	}
 
-	existingUser, err := h.service.GetByID(c.Context(), claims.UserID)
+	existingUser, err := h.service.GetByID(c.Context(), claims.UserId)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
@@ -192,7 +192,7 @@ func (h *UserHandler) UpdateCurrentUser(c fiber.Ctx) error {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
 
-	err = h.service.Update(c.Context(), claims.UserID, input)
+	err = h.service.Update(c.Context(), claims.UserId, input)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
@@ -213,7 +213,7 @@ func (h *UserHandler) DeleteAccount(c fiber.Ctx) error {
 		return ResponseError(c, fiber.StatusUnauthorized, "Favor fazer login novamente")
 	}
 
-	err = h.service.Delete(c.Context(), claims.Payload().UserID)
+	err = h.service.Delete(c.Context(), claims.UserId)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())

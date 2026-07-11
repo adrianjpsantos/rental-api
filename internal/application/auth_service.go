@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/adrianjpsantos/rental-api/internal/domain/authenticate"
 	"github.com/adrianjpsantos/rental-api/internal/domain/session"
@@ -27,12 +28,7 @@ func (a *AuthService) SignUp(ctx context.Context, input user.UserCreateInput) (*
 }
 
 func (a *AuthService) RefreshAccessToken(ctx context.Context, refreshToken string) (string, error) {
-	refreshTokenClaims, err := a.SessionService.ValidateRefreshToken(refreshToken)
-	if err != nil {
-		return "", err
-	}
-
-	return a.SessionService.GenerateAccessToken(refreshTokenClaims.Payload())
+	return a.SessionService.RefreshSession(ctx, refreshToken)
 }
 
 func (a *AuthService) Logout(ctx context.Context, userID string) error {
@@ -60,20 +56,12 @@ func (a *AuthService) Authenticate(
 		return nil, authenticate.ErrInvalidCredentials
 	}
 
-	payload := authenticate.AuthenticatePayload{
-		UserID: userForAuth.UserID,
-	}
-
-	accessToken, err := a.SessionService.GenerateAccessToken(payload)
+	refreshToken, accessToken, err := a.SessionService.StartSession(ctx, userForAuth.UserID)
 
 	if err != nil {
+		fmt.Println("Authenticate: ", err)
 		return nil, err
-	}
 
-	refreshToken, err := a.SessionService.GenerateRefreshToken(payload)
-
-	if err != nil {
-		return nil, err
 	}
 
 	return &authenticate.AuthenticateOutput{

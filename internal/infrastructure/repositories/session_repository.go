@@ -13,16 +13,16 @@ type SessionRepository struct {
 }
 
 // Desactive implements [session.Repository].
-func (r *SessionRepository) Desactive(ctx context.Context, token string) error {
+func (r *SessionRepository) Desactive(ctx context.Context, hash string) error {
 	query := `
 		UPDATE sessions SET
 			actived = false,
 			updated_at = NOW()
-		WHERE token = $1
+		WHERE token_hash = $1
 	`
 
 	result, err := r.db.ExecContext(ctx, query,
-		token,
+		hash,
 	)
 
 	if err != nil {
@@ -41,14 +41,14 @@ func (r *SessionRepository) Desactive(ctx context.Context, token string) error {
 func (r *SessionRepository) Create(ctx context.Context, session *session.Session) error {
 	query := `
 		INSERT INTO sessions
-		(id, user_id, token, expires_at,created_at,updated_at ) 
+		(id, user_id, token_hash, expires_at,created_at,updated_at ) 
 		VALUES ($1,$2,$3,$4,$5,$6)
 	`
 
 	_, err := r.db.ExecContext(ctx, query,
 		session.Id,
 		session.UserId,
-		session.Token,
+		session.TokenHash,
 		session.ExpiresAt,
 		session.CreatedAt,
 		session.UpdatedAt,
@@ -58,18 +58,86 @@ func (r *SessionRepository) Create(ctx context.Context, session *session.Session
 }
 
 // Delete implements [session.Repository].
-func (r *SessionRepository) Delete(ctx context.Context, id string) error {
-	panic("unimplemented")
+func (r *SessionRepository) Delete(ctx context.Context, hash string) error {
+	query := `
+		DELETE FROM sessions WHERE token_hash = $1
+	`
+
+	result, err := r.db.ExecContext(ctx, query,
+		hash,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return item.ErrItemNotFound
+	}
+
+	return nil
 }
 
 // FindById implements [session.Repository].
-func (r *SessionRepository) FindById(ctx context.Context, id string) (*session.Session, error) {
-	panic("unimplemented")
+func (r *SessionRepository) FindByHash(ctx context.Context, hash string) (*session.Session, error) {
+	query := `
+		SELECT id, user_id, token_hash, expires_at, actived
+		FROM sessions
+		WHERE token_hash = $1
+	`
+
+	var s session.Session
+
+	err := r.db.QueryRowContext(ctx, query, hash).Scan(
+		&s.Id,
+		&s.UserId,
+		&s.TokenHash,
+		&s.ExpiresAt,
+		&s.Actived,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, session.ErrSessionNotFound
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &s, nil
 }
 
 // Update implements [session.Repository].
-func (r *SessionRepository) Update(ctx context.Context, session *session.Session) error {
-	panic("unimplemented")
+func (r *SessionRepository) Update(ctx context.Context, sess *session.Session) error {
+	query := `
+		UPDATE sessions SET
+			expires_at = $1,
+			updated_at = NOW(),
+			actived = $2,
+		WHERE id = $3
+	`
+
+	result, err := r.db.ExecContext(ctx, query,
+		sess.ExpiresAt,
+		sess.UpdatedAt,
+		sess.Actived,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return session.ErrSessionNotFound
+	}
+
+	return nil
 }
 
 func NewSessionRepository(db *sql.DB) session.Repository {

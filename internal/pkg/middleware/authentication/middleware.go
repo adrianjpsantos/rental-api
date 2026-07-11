@@ -47,7 +47,7 @@ func AuthMiddleware(
 			)
 		}
 
-		claims, err := sessionService.ValidateAccessToken(sessionToken)
+		claims, err := sessionService.ValidateAccessToken(c.Context(), sessionToken)
 		if err != nil {
 			return fiber.NewError(
 				fiber.StatusUnauthorized,
