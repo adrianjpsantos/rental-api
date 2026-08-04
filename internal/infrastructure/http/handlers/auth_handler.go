@@ -111,3 +111,7 @@ func (h *AuthHandler) Refresh(c fiber.Ctx) error {
 		"access_token": accessToken,
 	})
 }
+
+func (h *AuthHandler) HandleGoogleLogin(c fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}

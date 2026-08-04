@@ -25,6 +25,7 @@ type Config struct {
 		AccessExpires  string
 		RefreshExpires string
 	}
+	GoogleClientID string
 }
 
 func LoadConfig() *Config {
@@ -64,6 +65,12 @@ func LoadConfig() *Config {
 	cfg.JWT.RefreshExpires = getEnv(
 		"JWT_REFRESH_EXPIRES",
 		"168h",
+	)
+
+	// Google
+	cfg.GoogleClientID = getEnv(
+		"GOOGLE_CLIENT_ID",
+		"SEU_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
 	)
 
 	return cfg

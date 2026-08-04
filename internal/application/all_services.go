@@ -9,6 +9,7 @@ import (
 	"github.com/adrianjpsantos/rental-api/internal/domain/review"
 	"github.com/adrianjpsantos/rental-api/internal/domain/session"
 	"github.com/adrianjpsantos/rental-api/internal/domain/user"
+	"github.com/adrianjpsantos/rental-api/internal/infrastructure/config"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/repositories"
 )
 
@@ -24,6 +25,8 @@ type AllServices struct {
 }
 
 func NewAllServices(repos *repositories.AllRepositories) *AllServices {
+
+	googleService := NewGoogleService(config.LoadConfig().GoogleClientID)
 	userService := NewUserService(repos.UserRepo)
 
 	reviewService := NewReviewService(
@@ -52,6 +55,7 @@ func NewAllServices(repos *repositories.AllRepositories) *AllServices {
 	authService := NewAuthService(
 		userService,
 		sessionService,
+		googleService,
 	)
 
 	return &AllServices{

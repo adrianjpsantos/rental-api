@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/adrianjpsantos/rental-api/internal/domain/authenticate"
+	"github.com/adrianjpsantos/rental-api/internal/domain/google"
 	"github.com/adrianjpsantos/rental-api/internal/domain/session"
 	"github.com/adrianjpsantos/rental-api/internal/domain/user"
 	"github.com/adrianjpsantos/rental-api/internal/security"
@@ -13,6 +14,7 @@ import (
 type AuthService struct {
 	UserService    user.Service
 	SessionService session.Service
+	GoogleService  google.Service
 }
 
 func (a *AuthService) SignUp(ctx context.Context, input user.UserCreateInput) (*authenticate.AuthenticateOutput, error) {
@@ -70,9 +72,10 @@ func (a *AuthService) Authenticate(
 	}, nil
 }
 
-func NewAuthService(userService user.Service, sessionService session.Service) authenticate.Service {
+func NewAuthService(userService user.Service, sessionService session.Service, googleService google.Service) authenticate.Service {
 	return &AuthService{
 		UserService:    userService,
 		SessionService: sessionService,
+		GoogleService:  googleService,
 	}
 }
