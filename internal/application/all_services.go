@@ -1,16 +1,18 @@
 package application
 
 import (
+	authaccount "github.com/adrianjpsantos/rental-api/internal/domain/auth_account"
 	"github.com/adrianjpsantos/rental-api/internal/domain/authenticate"
 	"github.com/adrianjpsantos/rental-api/internal/domain/availability"
 	"github.com/adrianjpsantos/rental-api/internal/domain/category"
 	"github.com/adrianjpsantos/rental-api/internal/domain/item"
+	"github.com/adrianjpsantos/rental-api/internal/domain/profile"
 	"github.com/adrianjpsantos/rental-api/internal/domain/rental"
 	"github.com/adrianjpsantos/rental-api/internal/domain/review"
 	"github.com/adrianjpsantos/rental-api/internal/domain/session"
 	"github.com/adrianjpsantos/rental-api/internal/domain/user"
-	"github.com/adrianjpsantos/rental-api/internal/infrastructure/config"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/repositories"
+	"github.com/adrianjpsantos/rental-api/internal/uow"
 )
 
 type AllServices struct {
@@ -22,40 +24,46 @@ type AllServices struct {
 	CategoryService     category.Service
 	AuthService         authenticate.Service
 	SessionService      session.Service
+	AuthAccount         authaccount.Service
+	Profile             profile.Service
 }
 
-func NewAllServices(repos *repositories.AllRepositories) *AllServices {
+func NewAllServices(uow uow.UnitOfWork, repos *repositories.AllRepositories) *AllServices {
 
-	googleService := NewGoogleService(config.LoadConfig().GoogleClientID)
-	userService := NewUserService(repos.UserRepo)
+	userService := NewUserService(repos.User)
+
+	authAccountService := NewAuthAccountService(repos.AuthAccount)
 
 	reviewService := NewReviewService(
-		repos.ReviewRepo,
+		repos.Review,
 		userService,
 	)
 
 	rentalService := NewRentalService(
-		repos.RentalRepo,
+		repos.Rental,
 	)
 
 	itemService := NewItemService(
-		repos.ItemRepo,
+		repos.Item,
 	)
 
 	availabilityService := NewAvailabilityService(
-		repos.AvailabilityRepo,
+		repos.Availability,
 	)
 
 	categoryService := NewCategoryService(
-		repos.CategoryRepo,
+		repos.Category,
 	)
 
-	sessionService := NewSessionService(repos.SessionRepo)
+	sessionService := NewSessionService(repos.Session)
 
 	authService := NewAuthService(
-		userService,
+		uow,
 		sessionService,
-		googleService,
+	)
+
+	profileService := NewProfileService(
+		repos.Profile,
 	)
 
 	return &AllServices{
@@ -67,5 +75,7 @@ func NewAllServices(repos *repositories.AllRepositories) *AllServices {
 		CategoryService:     categoryService,
 		SessionService:      sessionService,
 		AuthService:         authService,
+		AuthAccount:         authAccountService,
+		Profile:             profileService,
 	}
 }

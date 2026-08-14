@@ -3,21 +3,23 @@ package routes
 import (
 	"database/sql"
 
-	_ "github.com/adrianjpsantos/rental-api/docs"
 	"github.com/adrianjpsantos/rental-api/internal/application"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/handlers"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/repositories"
 	"github.com/adrianjpsantos/rental-api/internal/pkg/middleware/authentication"
-
-	swaggo "github.com/gofiber/contrib/v3/swaggo"
+	"github.com/adrianjpsantos/rental-api/internal/security/validator"
+	"github.com/adrianjpsantos/rental-api/internal/uow"
+	"github.com/gofiber/contrib/v3/swaggo"
 	"github.com/gofiber/fiber/v3"
 )
 
 func SetupRouter(db *sql.DB) *fiber.App {
 	app := fiber.New()
 
+	validator.Init()
+	uow := uow.NewUow(db)
 	repositories := repositories.NewAllRepositories(db)
-	services := application.NewAllServices(repositories)
+	services := application.NewAllServices(uow, repositories)
 	apiHandlers := handlers.NewAllHandlers(services)
 
 	SetupSwagger(app)
@@ -92,8 +94,8 @@ func SetupAuthRoutes(
 	router fiber.Router,
 	handler *handlers.AuthHandler,
 ) {
-	router.Post("/signup", handler.SignUp)
-	router.Post("/login", handler.Authenticate)
+	router.Post("/register", handler.Register)
+	router.Post("/login", handler.LoginLocal)
 	router.Post("/refresh", handler.Refresh)
 	router.Post("/logout", handler.Logout)
 
@@ -111,11 +113,6 @@ func SetupUserRoutes(
 	router.Get("/:user_id", handler.GetByID)
 	//router.Put("/:user_id", handler.Update)
 	//router.Delete("/:user_id", handler.Delete)
-
-	router.Get("/by-email", handler.GetByEmail)
-
-	router.Get("/exists-by-email", handler.ExistsByEmail)
-	router.Get("/exists-by-cpf", handler.ExistsByCPF)
 }
 
 func SetupReviewRoutes(

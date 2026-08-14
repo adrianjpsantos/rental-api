@@ -10,13 +10,13 @@ import (
 )
 
 type Session struct {
-	Id        uuid.UUID `json:"id,omitempty" validate:"required,uuid"`
-	UserId    uuid.UUID `json:"user_id,omitempty" validate:"required,uuid"`
-	TokenHash string    `json:"token_hash,omitempty" validate:"required"`
-	ExpiresAt time.Time `json:"expires_at,omitempty" validate:"datetime"`
-	CreatedAt time.Time `json:"created_at,omitempty" validate:"datetime"`
-	UpdatedAt time.Time `json:"updated_at,omitempty" validate:"datetime"`
-	Actived   bool      `json:"actived,omitempty" validate:"required,boolean"`
+	Id            uuid.UUID `json:"id,omitempty" validate:"required,uuid"`
+	AuthAccountId uuid.UUID `json:"auth_account_id,omitempty" validate:"required,uuid"`
+	TokenHash     string    `json:"token_hash,omitempty" validate:"required"`
+	ExpiresAt     time.Time `json:"expires_at,omitempty" validate:"datetime"`
+	CreatedAt     time.Time `json:"created_at,omitempty" validate:"datetime"`
+	LastUsedAt    time.Time `json:"last_used_at,omitempty" validate:"datetime"`
+	Actived       bool      `json:"actived,omitempty" validate:"required,boolean"`
 }
 
 type Claims struct {
@@ -29,13 +29,13 @@ func (s *Session) Expired() bool {
 	return s.ExpiresAt.Before(time.Now()) || !s.Actived
 }
 
-func NewSession(userId uuid.UUID) *Session {
+func NewSession(authAccountId uuid.UUID) *Session {
 	return &Session{
-		Id:        uuid.New(),
-		UserId:    userId,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		Actived:   true,
+		Id:            uuid.New(),
+		AuthAccountId: authAccountId,
+		CreatedAt:     time.Now(),
+		LastUsedAt:    time.Now(),
+		Actived:       true,
 	}
 }
 
@@ -47,5 +47,5 @@ func FormatTokenHash(token string) string {
 func (s *Session) UpdateToken(tokenHash string, expiresAt time.Time) {
 	s.TokenHash = tokenHash
 	s.ExpiresAt = expiresAt
-	s.UpdatedAt = time.Now()
+	s.LastUsedAt = time.Now()
 }

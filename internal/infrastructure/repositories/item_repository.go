@@ -11,10 +11,10 @@ import (
 )
 
 type ItemRepository struct {
-	db *sql.DB
+	db DBTX
 }
 
-func NewItemRepository(db *sql.DB) item.Repository {
+func NewItemRepository(db DBTX) item.Repository {
 	return &ItemRepository{db: db}
 }
 

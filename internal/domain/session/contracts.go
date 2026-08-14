@@ -8,11 +8,11 @@ import (
 )
 
 type Service interface {
-	GenerateAccessToken(ctx context.Context, userId uuid.UUID) (string, error)
-	GenerateRefreshToken(ctx context.Context, userId uuid.UUID, sessionId uuid.UUID) (string, *time.Time, error)
+	GenerateAccessToken(ctx context.Context, authAccountId uuid.UUID) (string, error)
+	GenerateRefreshToken(ctx context.Context, authAccountId uuid.UUID, sessionId uuid.UUID) (string, *time.Time, error)
 	ValidateAccessToken(ctx context.Context, accessToken string) (*Claims, error)
 	ValidateRefreshToken(ctx context.Context, refreshToken string) (*Claims, error)
-	StartSession(ctx context.Context, userId uuid.UUID) (string, string, error)
+	StartSession(ctx context.Context, authAccountId uuid.UUID) (string, string, error)
 	RefreshSession(ctx context.Context, refreshToken string) (string, error)
 	DesactivateSession(ctx context.Context, sessionId string) error
 }

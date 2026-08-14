@@ -1,11 +1,11 @@
 package repositories
 
 import (
-	"database/sql"
-
+	authaccount "github.com/adrianjpsantos/rental-api/internal/domain/auth_account"
 	"github.com/adrianjpsantos/rental-api/internal/domain/availability"
 	"github.com/adrianjpsantos/rental-api/internal/domain/category"
 	"github.com/adrianjpsantos/rental-api/internal/domain/item"
+	"github.com/adrianjpsantos/rental-api/internal/domain/profile"
 	"github.com/adrianjpsantos/rental-api/internal/domain/rental"
 	"github.com/adrianjpsantos/rental-api/internal/domain/review"
 	"github.com/adrianjpsantos/rental-api/internal/domain/session"
@@ -13,16 +13,18 @@ import (
 )
 
 type AllRepositories struct {
-	UserRepo         user.Repository
-	ReviewRepo       review.Repository
-	RentalRepo       rental.Repository
-	ItemRepo         item.Repository
-	AvailabilityRepo availability.Repository
-	CategoryRepo     category.Repository
-	SessionRepo      session.Repository
+	User         user.Repository
+	Review       review.Repository
+	Rental       rental.Repository
+	Item         item.Repository
+	Availability availability.Repository
+	Category     category.Repository
+	Session      session.Repository
+	Profile      profile.Repository
+	AuthAccount  authaccount.Repository
 }
 
-func NewAllRepositories(db *sql.DB) *AllRepositories {
+func NewAllRepositories(db DBTX) *AllRepositories {
 	userRepo := NewUserRepository(db)
 	reviewRepo := NewReviewRepository(db)
 	rentalRepo := NewRentalRepository(db)
@@ -30,14 +32,18 @@ func NewAllRepositories(db *sql.DB) *AllRepositories {
 	availabilityRepo := NewAvailabilityRepository(db)
 	categoryRepo := NewCategoryRepository(db)
 	sessionRepo := NewSessionRepository(db)
+	authAccountRepo := NewAuthAccountRepository(db)
+	profileRepo := NewProfileRepository(db)
 
 	return &AllRepositories{
-		UserRepo:         userRepo,
-		ReviewRepo:       reviewRepo,
-		RentalRepo:       rentalRepo,
-		ItemRepo:         itemRepo,
-		AvailabilityRepo: availabilityRepo,
-		CategoryRepo:     categoryRepo,
-		SessionRepo:      sessionRepo,
+		User:         userRepo,
+		Review:       reviewRepo,
+		Rental:       rentalRepo,
+		Item:         itemRepo,
+		Availability: availabilityRepo,
+		Category:     categoryRepo,
+		Session:      sessionRepo,
+		AuthAccount:  authAccountRepo,
+		Profile:      profileRepo,
 	}
 }

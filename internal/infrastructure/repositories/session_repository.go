@@ -9,7 +9,7 @@ import (
 )
 
 type SessionRepository struct {
-	db *sql.DB
+	db DBTX
 }
 
 // Desactive implements [session.Repository].
@@ -17,7 +17,7 @@ func (r *SessionRepository) Desactive(ctx context.Context, hash string) error {
 	query := `
 		UPDATE sessions SET
 			actived = false,
-			updated_at = NOW()
+			last_used_at = NOW()
 		WHERE token_hash = $1
 	`
 
@@ -41,17 +41,17 @@ func (r *SessionRepository) Desactive(ctx context.Context, hash string) error {
 func (r *SessionRepository) Create(ctx context.Context, session *session.Session) error {
 	query := `
 		INSERT INTO sessions
-		(id, user_id, token_hash, expires_at,created_at,updated_at ) 
+		(id, auth_account_id, token_hash, expires_at,created_at,last_used_at ) 
 		VALUES ($1,$2,$3,$4,$5,$6)
 	`
 
 	_, err := r.db.ExecContext(ctx, query,
 		session.Id,
-		session.UserId,
+		session.AuthAccountId,
 		session.TokenHash,
 		session.ExpiresAt,
 		session.CreatedAt,
-		session.UpdatedAt,
+		session.LastUsedAt,
 	)
 
 	return err
@@ -82,7 +82,7 @@ func (r *SessionRepository) Delete(ctx context.Context, hash string) error {
 // FindById implements [session.Repository].
 func (r *SessionRepository) FindByHash(ctx context.Context, hash string) (*session.Session, error) {
 	query := `
-		SELECT id, user_id, token_hash, expires_at, actived
+		SELECT id, auth_account_id, token_hash, expires_at, actived
 		FROM sessions
 		WHERE token_hash = $1
 	`
@@ -91,7 +91,7 @@ func (r *SessionRepository) FindByHash(ctx context.Context, hash string) (*sessi
 
 	err := r.db.QueryRowContext(ctx, query, hash).Scan(
 		&s.Id,
-		&s.UserId,
+		&s.AuthAccountId,
 		&s.TokenHash,
 		&s.ExpiresAt,
 		&s.Actived,
@@ -113,14 +113,14 @@ func (r *SessionRepository) Update(ctx context.Context, sess *session.Session) e
 	query := `
 		UPDATE sessions SET
 			expires_at = $1,
-			updated_at = NOW(),
+			last_used_at = NOW(),
 			actived = $2,
 		WHERE id = $3
 	`
 
 	result, err := r.db.ExecContext(ctx, query,
 		sess.ExpiresAt,
-		sess.UpdatedAt,
+		sess.LastUsedAt,
 		sess.Actived,
 	)
 
@@ -140,6 +140,6 @@ func (r *SessionRepository) Update(ctx context.Context, sess *session.Session) e
 	return nil
 }
 
-func NewSessionRepository(db *sql.DB) session.Repository {
+func NewSessionRepository(db DBTX) session.Repository {
 	return &SessionRepository{db: db}
 }

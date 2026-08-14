@@ -2,32 +2,33 @@ package application
 
 import (
 	"context"
-	"log"
 
 	"github.com/adrianjpsantos/rental-api/internal/domain/review"
 	"github.com/adrianjpsantos/rental-api/internal/domain/user"
+	"github.com/adrianjpsantos/rental-api/internal/uow"
 	"github.com/google/uuid"
 )
 
 type ReviewService struct {
-	reviewRepo  review.Repository
+	Repository  review.Repository
 	userService user.Service
+	UOW         uow.UnitOfWork
 }
 
 func NewReviewService(reviewRepo review.Repository, userService user.Service) review.Service {
 	return &ReviewService{
-		reviewRepo:  reviewRepo,
+		Repository:  reviewRepo,
 		userService: userService,
 	}
 }
 
 func (s *ReviewService) ExistsByRentalAndReviewer(ctx context.Context, rentalID uuid.UUID, reviewerID uuid.UUID) (bool, error) {
-	return s.reviewRepo.ExistsByRentalAndReviewer(ctx, rentalID, reviewerID)
+	return s.Repository.ExistsByRentalAndReviewer(ctx, rentalID, reviewerID)
 }
 
 func (s *ReviewService) Create(ctx context.Context, input review.ReviewCreateInput) error {
 
-	exists, err := s.ExistsByRentalAndReviewer(ctx, input.RentalID, input.ReviewerID)
+	exists, err := s.Repository.ExistsByRentalAndReviewer(ctx, input.RentalID, input.ReviewerID)
 	if err != nil {
 		return err
 	}
@@ -40,19 +41,17 @@ func (s *ReviewService) Create(ctx context.Context, input review.ReviewCreateInp
 		return err
 	}
 
-	if err := s.reviewRepo.Create(ctx, *newReview); err != nil {
+	if err := s.Repository.Create(ctx, *newReview); err != nil {
 		return err
 	}
 
-	if err := s.userService.UpdateReputationCache(ctx, input.ReviewedID); err != nil {
-		log.Println(err)
-	}
+	// Update the reputation of the reviewed user with Trigger in PostgreSQL, but also update the reputation in the user service to keep it in sync
 
 	return nil
 }
 
 func (s *ReviewService) GetByID(ctx context.Context, id uuid.UUID) (*review.Review, error) {
-	existingReview, err := s.reviewRepo.GetByID(ctx, id)
+	existingReview, err := s.Repository.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -63,17 +62,17 @@ func (s *ReviewService) GetByID(ctx context.Context, id uuid.UUID) (*review.Revi
 }
 
 func (s *ReviewService) GetByRentalID(ctx context.Context, rentalID uuid.UUID) ([]*review.Review, error) {
-	return s.reviewRepo.GetByRentalID(ctx, rentalID)
+	return s.Repository.GetByRentalID(ctx, rentalID)
 }
 
 func (s *ReviewService) GetReceivedReviews(ctx context.Context, reviewedID uuid.UUID, reviewType *review.ReviewType) ([]*review.Review, error) {
-	return s.reviewRepo.GetReceivedReviews(ctx, reviewedID, reviewType)
+	return s.Repository.GetReceivedReviews(ctx, reviewedID, reviewType)
 }
 
 func (s *ReviewService) GetGivenReviews(ctx context.Context, reviewedID uuid.UUID, reviewType *review.ReviewType) ([]*review.Review, error) {
-	return s.reviewRepo.GetGivenReviews(ctx, reviewedID, reviewType)
+	return s.Repository.GetGivenReviews(ctx, reviewedID, reviewType)
 }
 
 func (s *ReviewService) GetUserReviews(ctx context.Context, userID uuid.UUID, reviewType *review.ReviewType) ([]*review.Review, error) {
-	return s.reviewRepo.GetUserReviews(ctx, userID, reviewType)
+	return s.Repository.GetUserReviews(ctx, userID, reviewType)
 }

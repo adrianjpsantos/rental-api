@@ -41,7 +41,6 @@ type ReviewCreateInput struct {
 func NewReview(input ReviewCreateInput) (*Review, error) {
 
 	review := &Review{
-		Id:         uuid.New(),
 		RentalID:   input.RentalID,
 		ReviewerID: input.ReviewerID,
 		ReviewedID: input.ReviewedID,

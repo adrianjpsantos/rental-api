@@ -56,7 +56,6 @@ func NewAvailabilitySlot(
 ) (*AvailabilitySlot, error) {
 
 	slot := &AvailabilitySlot{
-		Id:        uuid.New(),
 		ItemId:    newSlot.ItemID,
 		StartDate: newSlot.StartDate,
 		EndDate:   newSlot.EndDate,

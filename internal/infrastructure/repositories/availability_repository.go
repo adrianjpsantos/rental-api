@@ -10,10 +10,10 @@ import (
 )
 
 type AvailabilityRepository struct {
-	db *sql.DB
+	db DBTX
 }
 
-func NewAvailabilityRepository(db *sql.DB) availability.Repository {
+func NewAvailabilityRepository(db DBTX) availability.Repository {
 	return &AvailabilityRepository{db: db}
 }
 

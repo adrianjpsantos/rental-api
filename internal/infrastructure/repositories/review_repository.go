@@ -9,10 +9,10 @@ import (
 )
 
 type ReviewRepository struct {
-	db *sql.DB
+	db DBTX
 }
 
-func NewReviewRepository(db *sql.DB) review.Repository {
+func NewReviewRepository(db DBTX) review.Repository {
 	return &ReviewRepository{db: db}
 }
 

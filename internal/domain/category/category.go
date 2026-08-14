@@ -39,7 +39,6 @@ type CategoryCreateInput struct {
 
 func NewCategory(newCat CategoryCreateInput) (*Category, error) {
 	category := &Category{
-		ID:          uuid.New(),
 		Name:        strings.TrimSpace(newCat.Name),
 		Description: strings.TrimSpace(newCat.Description),
 		Icon:        strings.TrimSpace(newCat.Icon),

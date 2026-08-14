@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -11,7 +10,7 @@ import (
 )
 
 type RentalRepository struct {
-	db *sql.DB
+	db DBTX
 }
 
 // Create implements [rental.InterfaceRentalRepository].
@@ -313,6 +312,6 @@ func (r *RentalRepository) Update(ctx context.Context, rent rental.Rental) error
 	return nil
 }
 
-func NewRentalRepository(db *sql.DB) rental.Repository {
+func NewRentalRepository(db DBTX) rental.Repository {
 	return &RentalRepository{db: db}
 }

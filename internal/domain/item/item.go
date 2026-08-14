@@ -69,7 +69,6 @@ type ItemFilter struct {
 // NewItem é o construtor da entidade
 func NewItem(createInput ItemCreateInput) (*Item, error) {
 	item := &Item{
-		Id:          uuid.New(),
 		OwnerID:     createInput.OwnerID,
 		CategoryID:  createInput.CategoryID,
 		Title:       createInput.Title,

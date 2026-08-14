@@ -11,74 +11,39 @@ import (
 type Role string
 
 const (
-	Admin  Role = "admin"
-	Lessor Role = "lessor" // locador
-	Lessee Role = "lessee" // locatário
+	RoleUser  Role = "user"
+	RoleAdmin Role = "admin"
 )
 
 type User struct {
-	Id               uuid.UUID `json:"id,omitempty" validate:"required,uuid"`
-	Name             string    `json:"name" validate:"min=8,max=100"`
-	Email            string    `json:"email" validate:"required,email"`
-	PasswordHash     string    `json:"password_hash,omitempty" validate:"required"`
-	CPF              string    `json:"cpf" validate:"required,cpf"`
-	Phone            string    `json:"phone" validate:"required,e164"`
-	BirthDate        time.Time `json:"birth_date" validate:"required,datetime,adult"`
-	AvatarURL        string    `json:"avatar_url,omitempty" validate:"url_encoded"`
-	IsVerified       bool      `json:"is_verified" validate:"required,boolean"`
-	Role             Role      `json:"role" validate:"required, role"`
-	Reputation       float32   `json:"reputation" validate:"required,gte=0"`
-	TotalRentals     int       `json:"total_rentals" validate:"required,gte=0"`
-	TotalItemsRented int       `json:"total_items_rented" validate:"required,gte=0"`
-	CreatedAt        time.Time `json:"created_at" validate:"datetime"`
-	UpdatedAt        time.Time `json:"updated_at" validate:"datetime"`
-	DeletedAt        time.Time `json:"deleted_at" validate:"datetime"` // Soft Delete
+	ID               uuid.UUID  `json:"id" validate:"required,uuid"`
+	Role             Role       `json:"role" validate:"required,oneof=user admin"`
+	Reputation       float32    `json:"reputation" validate:"gte=0,lte=5"`
+	TotalRentals     int        `json:"total_rentals" validate:"gte=0"`
+	TotalItemsRented int        `json:"total_items_rented" validate:"gte=0"`
+	Active           bool       `json:"active"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
+	DeletedAt        *time.Time `json:"deleted_at,omitempty"`
 }
 
-type UserUpdateInput struct {
-	Name      string    `json:"name" validate:"min=8,max=100"`
-	Phone     string    `json:"phone" validate:"required,e164"`
-	AvatarURL string    `json:"avatar_url,omitempty" validate:"url_encoded"`
-	BirthDate time.Time `json:"birth_date" validate:"required,datetime,adult"`
+type CreateInput struct {
+	Role Role `json:"role"`
 }
 
-type UserForAuthentication struct {
-	UserID       uuid.UUID `json:"user_id" validate:"required,uuid"`
-	PasswordHash string    `json:"password_hash" validate:"required"`
-	Email        string    `json:"email" validate:"required,email"`
-	Name         string    `json:"name" validate:"min=8,max=100"`
-}
-
-type UserPublic struct {
-	Id   uuid.UUID `json:"id,omitempty" validate:"required,uuid"`
-	Name string    `json:"name" validate:"min=8,max=100"`
-	Role Role      `json:"role" validate:"required, role"`
-}
-
-type UserCreateInput struct {
-	Name      string    `json:"name" validate:"min=8,max=100"`
-	Email     string    `json:"email" validate:"required,email"`
-	Password  string    `json:"password" validate:"required,pass_strength"`
-	Cpf       string    `json:"cpf" validate:"required,cpf"`
-	Phone     string    `json:"phone" validate:"required,e164"`
-	BirthDate time.Time `json:"birth_date" validate:"required,datetime,adult"`
-	Role      Role      `json:"role" validate:"required, role"`
-}
-
-func NewUser(newUser UserCreateInput) (*User, error) {
+func New(role Role) (*User, error) {
 	user := &User{
-		Id:           uuid.New(),
-		Name:         newUser.Name,
-		Email:        newUser.Email,
-		PasswordHash: newUser.Password, // A senha será hashada no serviço ("Recebe a senha em texto plano, mas armazena o hash ao criar a entidade")
-		CPF:          newUser.Cpf,
-		Phone:        newUser.Phone,
-		BirthDate:    newUser.BirthDate,
-		Role:         newUser.Role,
-		IsVerified:   false,
-		Reputation:   0,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		Role:             role,
+		Active:           true,
+		Reputation:       0,
+		TotalRentals:     0,
+		TotalItemsRented: 0,
+		CreatedAt:        time.Now(),
+		UpdatedAt:        time.Now(),
+	}
+
+	if user.Role == "" {
+		user.Role = RoleUser
 	}
 
 	if err := user.Validate(); err != nil {
@@ -88,75 +53,44 @@ func NewUser(newUser UserCreateInput) (*User, error) {
 	return user, nil
 }
 
-// Update atualiza informações do usuário
-func (u *User) Update(update UserUpdateInput) error {
-	updated := false
-
-	if update.Name != "" {
-		u.Name = update.Name
-		updated = true
-	}
-	if update.Phone != "" {
-		u.Phone = update.Phone
-		updated = true
-	}
-	if update.AvatarURL != "" {
-		u.AvatarURL = update.AvatarURL
-		updated = true
-	}
-	if !update.BirthDate.IsZero() {
-		u.BirthDate = update.BirthDate
-		updated = true
-	}
-
-	if updated {
-		u.UpdatedAt = time.Now()
-	}
-
-	return u.Validate()
+func (u *User) Activate() {
+	u.Active = true
+	u.UpdatedAt = time.Now()
 }
 
-// AddReputation adiciona pontos à reputação (média)
-func (u *User) AddReputation(newRating float32) {
-	// Lógica simples de média (pode ser melhorada depois)
+func (u *User) Deactivate() {
+	u.Active = false
+	u.UpdatedAt = time.Now()
+}
+
+func (u *User) AddReputation(rating float32) {
 	if u.Reputation == 0 {
-		u.Reputation = newRating
+		u.Reputation = rating
 	} else {
-		u.Reputation = (u.Reputation + newRating) / 2
+		u.Reputation = (u.Reputation + rating) / 2
 	}
+
+	u.UpdatedAt = time.Now()
 }
 
-// IsLessor retorna se o usuário é locador
-func (u *User) IsLessor() bool {
-	return u.Role == Lessor || u.Role == Admin
+func (u *User) IncrementRentals() {
+	u.TotalRentals++
+	u.UpdatedAt = time.Now()
 }
 
-// IsLessee retorna se o usuário é locatário
-func (u *User) IsLessee() bool {
-	return u.Role == Lessee || u.Role == Admin
+func (u *User) IncrementItemsRented() {
+	u.TotalItemsRented++
+	u.UpdatedAt = time.Now()
 }
 
-// IsAdmin retorna se o usuário é administrador
 func (u *User) IsAdmin() bool {
-	return u.Role == Admin
+	return u.Role == RoleAdmin
 }
 
-// CanCreateItem verifica se o usuário pode cadastrar itens para alugar
-func (u *User) CanCreateItem() bool {
-	return u.IsLessor() || u.IsAdmin()
-}
-
-// CanRentItem verifica se o usuário pode alugar itens
-func (u *User) CanRentItem() bool {
-	return u.IsLessee() || u.IsAdmin()
-}
-
-// Validate valida as regras de negócio da entidade User
 func (u *User) Validate() error {
 	validate := validator.New()
 
 	if err := validate.Struct(u); err != nil {
-
 		return fmt.Errorf("validation error: %w", err)
 	}
 

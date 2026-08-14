@@ -69,7 +69,6 @@ type RentalCreateInput struct {
 // NewRental cria uma nova solicitação de aluguel
 func NewRental(input RentalCreateInput) (*Rental, error) {
 	rental := &Rental{
-		Id:             uuid.New(),
 		ItemID:         input.ItemID,
 		LesseeID:       input.LesseeID,
 		LessorID:       input.LessorID,

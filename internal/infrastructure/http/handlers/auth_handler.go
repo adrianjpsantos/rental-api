@@ -6,14 +6,13 @@ import (
 
 	"github.com/adrianjpsantos/rental-api/internal/domain/authenticate"
 	"github.com/adrianjpsantos/rental-api/internal/domain/session"
-	"github.com/adrianjpsantos/rental-api/internal/domain/user"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/config"
 	"github.com/adrianjpsantos/rental-api/internal/infrastructure/http/parses"
 	"github.com/gofiber/fiber/v3"
 )
 
 type AuthHandler struct {
-	authService    authenticate.Service
+	AuthService    authenticate.Service
 	SessionService session.Service
 }
 
@@ -21,34 +20,36 @@ func NewAuthHandler(
 	authService authenticate.Service, sessionService session.Service,
 ) *AuthHandler {
 	return &AuthHandler{
-		authService:    authService,
+		AuthService:    authService,
 		SessionService: sessionService,
 	}
 }
 
-func (h *AuthHandler) SignUp(c fiber.Ctx) error {
-	input, err := parses.ParseBody[user.UserCreateInput](c)
+func (h *AuthHandler) Register(c fiber.Ctx) error {
+	input, err := parses.ParseBody[authenticate.RegisterInput](c)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
 
-	output, err := h.authService.SignUp(c.Context(), input)
+	err = h.AuthService.Register(c.Context(), input)
 
 	if err != nil {
 		return ResponseError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
-	return ResponseAuthSuccess(c, output)
+	return ResponseSuccess(c, fiber.Map{
+		"message": "Registro bem-sucedido",
+	})
 }
 
-func (h *AuthHandler) Authenticate(c fiber.Ctx) error {
+func (h *AuthHandler) LoginLocal(c fiber.Ctx) error {
 	input, err := parses.ParseBody[authenticate.AuthenticateInput](c)
 	if err != nil {
 		return ResponseError(c, fiber.StatusBadRequest, "JSON Inválido")
 	}
 
-	output, err := h.authService.Authenticate(c.Context(), input)
+	output, err := h.AuthService.LoginLocal(c.Context(), input)
 	if err != nil {
 
 		if err == authenticate.ErrInvalidCredentials {
@@ -87,7 +88,7 @@ func (h *AuthHandler) Refresh(c fiber.Ctx) error {
 
 	fmt.Println("Refresh token: ", refreshToken)
 
-	accessToken, err := h.authService.RefreshAccessToken(c.Context(), refreshToken)
+	accessToken, err := h.AuthService.RefreshAccessToken(c.Context(), refreshToken)
 
 	if err != nil {
 		if errors.Is(err, session.ErrSessionNotFound) || errors.Is(err, session.ErrSessionExpired) || errors.Is(err, session.ErrInvalidRefreshToken) {
