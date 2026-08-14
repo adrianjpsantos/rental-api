@@ -1,14 +1,44 @@
 package validator
 
 import (
-	"regexp"
+	"strings"
+	"unicode"
 
 	"github.com/go-playground/validator/v10"
 )
 
 func validatePasswordStrength(fl validator.FieldLevel) bool {
-	strengthRegex := regexp.MustCompile(`/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&^])[A-Za-z\d@$!%*?&^]{8,}$/`)
 	password := fl.Field().String()
 
-	return strengthRegex.MatchString(password)
+	if len(password) < 8 {
+		return false
+	}
+
+	var (
+		hasLower   bool
+		hasUpper   bool
+		hasNumber  bool
+		hasSpecial bool
+	)
+
+	for _, char := range password {
+		switch {
+		case unicode.IsLower(char):
+			hasLower = true
+
+		case unicode.IsUpper(char):
+			hasUpper = true
+
+		case unicode.IsDigit(char):
+			hasNumber = true
+
+		case strings.ContainsRune("@$!%*?&^", char):
+			hasSpecial = true
+		}
+	}
+
+	return hasLower &&
+		hasUpper &&
+		hasNumber &&
+		hasSpecial
 }

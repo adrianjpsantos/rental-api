@@ -9,7 +9,7 @@ func validateRole(fl validator.FieldLevel) bool {
 	role := fl.Field().String()
 
 	switch role {
-	case string(user.Lessee), string(user.Lessor), string(user.Admin):
+	case string(user.RoleAdmin), string(user.RoleUser):
 		return true
 	default:
 		return false
