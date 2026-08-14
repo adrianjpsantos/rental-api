@@ -19,11 +19,11 @@ func NewUow(db *sql.DB) UnitOfWork {
 
 func (u *Uow) Do(
 	ctx context.Context,
-	transition bool,
+	transaction bool,
 	fn func(repositories repositories.AllRepositories) error,
 ) error {
 
-	if transition {
+	if transaction {
 
 		tx, err := u.db.BeginTx(ctx, nil)
 		if err != nil {
