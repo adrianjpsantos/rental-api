@@ -7,7 +7,7 @@ import (
 
 var validate *validator.Validate
 
-func init() {
+func Init() {
 	validate = validator.New()
 	setupCustomValidations(validate)
 }
@@ -22,4 +22,5 @@ func setupCustomValidations(v *validator.Validate) {
 	_ = v.RegisterValidation("adult", validateAdult)
 	_ = v.RegisterValidation("role", validateRole)
 	_ = v.RegisterValidation("pass_strength", validatePasswordStrength)
+	_ = v.RegisterValidation("provider", validateProvider)
 }
