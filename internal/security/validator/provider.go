@@ -5,10 +5,14 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-func validateProvider(fl validator.FieldLevel) bool {
-	role := fl.Field().String()
+func ValidateProvider(fl validator.FieldLevel) bool {
+	provider := fl.Field().String()
 
-	switch role {
+	return IsProvider(provider)
+}
+
+func IsProvider(provider string) bool {
+	switch provider {
 	case string(authaccount.ProviderLocal),
 		string(authaccount.ProviderGoogle),
 		string(authaccount.ProviderFacebook),

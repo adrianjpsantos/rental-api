@@ -7,18 +7,22 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-func validateCpf(fl validator.FieldLevel) bool {
+func ValidateCpf(fl validator.FieldLevel) bool {
+	return IsCpf(fl.Field().String())
+}
+
+func IsCpf(cpf string) bool {
 	stripRegex := regexp.MustCompile(`\D`)
 
-	cleanCpf := stripRegex.ReplaceAllString(fl.Field().String(), "")
+	cleanCpf := stripRegex.ReplaceAllString(cpf, "")
 
 	// 2. Validações básicas (tamanho e sequências inválidas)
-	if len(cleanCpf) != 11 || isInvalidSequence(cleanCpf) {
+	if len(cleanCpf) != 11 || IsInvalidSequence(cleanCpf) {
 		return false
 	}
 
-	digit1 := calculateDigit(cleanCpf[:9], 10)
-	digit2 := calculateDigit(cleanCpf[:9+1], 11)
+	digit1 := CalculateDigit(cleanCpf[:9], 10)
+	digit2 := CalculateDigit(cleanCpf[:9+1], 11)
 
 	d1, _ := strconv.Atoi(string(cleanCpf[9]))
 	d2, _ := strconv.Atoi(string(cleanCpf[10]))
@@ -26,7 +30,7 @@ func validateCpf(fl validator.FieldLevel) bool {
 	return digit1 == d1 && digit2 == d2
 }
 
-func calculateDigit(slice string, factor int) int {
+func CalculateDigit(slice string, factor int) int {
 	sum := 0
 	for _, char := range slice {
 		digit, _ := strconv.Atoi(string(char))
@@ -40,7 +44,7 @@ func calculateDigit(slice string, factor int) int {
 	return 11 - remainder
 }
 
-func isInvalidSequence(cpf string) bool {
+func IsInvalidSequence(cpf string) bool {
 	// Verifica sequências como 111.111.111-11
 	// Em Go, uma forma eficiente é comparar se todos os bytes são iguais
 	first := cpf[0]

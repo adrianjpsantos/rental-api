@@ -18,9 +18,9 @@ func Get() *validator.Validate {
 
 func setupCustomValidations(v *validator.Validate) {
 	// Suas validações customizadas
-	_ = v.RegisterValidation("cpf", validateCpf)
-	_ = v.RegisterValidation("adult", validateAdult)
-	_ = v.RegisterValidation("role", validateRole)
-	_ = v.RegisterValidation("pass_strength", validatePasswordStrength)
-	_ = v.RegisterValidation("provider", validateProvider)
+	_ = v.RegisterValidation("cpf", ValidateCpf)
+	_ = v.RegisterValidation("adult", ValidateAdult)
+	_ = v.RegisterValidation("role", ValidateRole)
+	_ = v.RegisterValidation("pass_strength", ValidatePasswordStrength)
+	_ = v.RegisterValidation("provider", ValidateProvider)
 }

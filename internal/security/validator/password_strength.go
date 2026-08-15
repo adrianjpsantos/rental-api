@@ -7,9 +7,14 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-func validatePasswordStrength(fl validator.FieldLevel) bool {
+func ValidatePasswordStrength(fl validator.FieldLevel) bool {
 	password := fl.Field().String()
 
+	return IsPasswordStrength(password)
+
+}
+
+func IsPasswordStrength(password string) bool {
 	if len(password) < 8 {
 		return false
 	}
@@ -32,7 +37,7 @@ func validatePasswordStrength(fl validator.FieldLevel) bool {
 		case unicode.IsDigit(char):
 			hasNumber = true
 
-		case strings.ContainsRune("@$!%*?&^", char):
+		case strings.ContainsRune("@$!%*?&^.", char):
 			hasSpecial = true
 		}
 	}
